@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantcalendar"
+version = "1.0"
+authors = [
+    {name = "lzq", email = 'justgotpaid88@qq.com'}
+]
+description = "trade calendar"
+requires-python = ">=3.9"
+dependencies = [ ]
+
+[project.optional-dependencies]
+update = [
+    "pandas",
+    "exchange_calendars",
+    "tushare",
+    "tqsdk",
+    "chinesecalendar",
+]
+
+[tool.setuptools]
+packages = ["quantcalendar", "quantcalendar.tools"]
