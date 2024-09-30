@@ -1,10 +1,10 @@
 import datetime
 
 import pandas as pd
-from akshare.futures.futures_zh_sina import (futures_zh_daily_sina,
-                                             futures_zh_minute_sina)
-
-from quantcalendar.common import IntervalType
+from akshare.futures.futures_zh_sina import (
+    futures_zh_daily_sina,
+    futures_zh_minute_sina,
+)
 
 
 def _filter_dt(dt):
@@ -30,15 +30,13 @@ def download_and_save_answers(symbols):
             print(f"{symbol}\t{interval}min\tfrom {st} to {ed}")
             origin = pd.date_range(st, ed, periods=200)
             answer = dt[dt.searchsorted(origin, side="left")]
-            int_type = IntervalType.MINUTE
             if interval == "60":
-                interval = 1
-                int_type = IntervalType.HOUR
+                int_type = f"1H"
+            else:
+                int_type = f"{interval}m"
             answer.index = origin
             # print(answer)
-            answer.to_pickle(
-                f"tests/next_bartime_answers/{symbol}_{interval}{int_type.value}.pickle"
-            )
+            answer.to_pickle(f"tests/next_bartime_answers/{symbol}_{int_type}.pickle")
         df = futures_zh_daily_sina(symbol)
         df["date"] = pd.to_datetime(df["date"])
         dt = df["date"].apply(lambda x: x + close_time)
@@ -62,18 +60,4 @@ if __name__ == "__main__":
         ("BC2411", datetime.timedelta(hours=15)),
     ]
 
-    # - 1m
-    #   - 3m
-    #   - 5m
-    #   - 15m
-    #   - 30m
-    #   - 1h
-    #   # - 2h
-    #   - 4h
-    #   # - 6h
-    #   - 12h
-    #   - 1d
-    #   # - 1w
-    #   # - 1M
-    #   # - 3M
     download_and_save_answers(symbols)

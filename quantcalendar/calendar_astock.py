@@ -11,9 +11,10 @@ class CalendarAstock(MongoDBCalendar):
     """
 
     COLLECTION_NAME = "cn_stock"
-    session = (34200, 54000)
     session_details = ((34200, 41400), (46800, 54000))
     tz = ZoneInfo("Asia/Shanghai")
+    # 1m - 5m - 15m - 30m - 1H - 2H
+    intervals = (60, 300, 900, 1800, 3600, 7200)
 
 
 if __name__ == "__main__":

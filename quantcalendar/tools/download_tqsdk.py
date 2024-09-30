@@ -58,8 +58,8 @@ def _download_markettime(api):
     products = {}
     for row in df.itertuples():
         open_period = []
-        open_period.extend(_time_period_from_str(row.trading_time_day))
         open_period.extend(_time_period_from_str(row.trading_time_night))
+        open_period.extend(_time_period_from_str(row.trading_time_day))
         if row.product_id in products:
             sum = 0
             for start, end in products[row.product_id]:

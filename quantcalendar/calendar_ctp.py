@@ -7,8 +7,7 @@ from zoneinfo import ZoneInfo
 
 import quantdata as qd
 
-from .calendar import DB_NAME_CALENDAR, MongoDBCalendar
-from .common import IntervalType
+from .calendar import DB_NAME_CALENDAR, I1H, I2H, I3H, I4H, MongoDBCalendar
 from .next_bartime_utils import *
 
 __all__ = ["CalendarCTP"]
@@ -39,10 +38,11 @@ class CalendarCTP(MongoDBCalendar):
 
     COLLECTION_NAME = "cn_future"
     COLLECTION_NAME_SESSIONS = "cn_future_session_details"
-    session = (75600, 54900)
-    session_details = ((32400, 54900), (75600, 9000))
+    session_details = ((75600, 9000), (32400, 54900))
     tz = ZoneInfo("Asia/Shanghai")
     offset = timedelta(hours=2, minutes=30)
+    # 1m - 3m - 5m - 10m - 15m - 30m - 1H - 2H - 3H - 4H
+    intervals = (60, 180, 300, 600, 900, 1800, I1H, I2H, I3H, I4H)
 
     def __init__(self, mongo_client):
         super().__init__(mongo_client)
@@ -53,17 +53,13 @@ class CalendarCTP(MongoDBCalendar):
         )
         for prod in products:
             product_id = prod["_id"].upper()
-            self._sub_calendars[product_id] = cal = copy.copy(self)
+            session_details = prod["market_time"]
+            cal = self.add(
+                product_id,
+                session_details=session_details,
+            )
             cal.product_id = product_id
             cal.product_type = _get_product_type(product_id)
-            cal.session_details = prod["market_time"]
-            # 收盘时间 15:00 15:15
-            close_tm = None
-            for _, c in cal.session_details:
-                if c >= 54000 and c <= 54900:  #
-                    close_tm = c
-                    break
-            cal.session = (75600, close_tm)
 
     def get(self, symbol: str = None):
         return super().get(_convert_symbol(symbol))
@@ -91,9 +87,7 @@ class CalendarCTP(MongoDBCalendar):
         product_type = self.product_type.name if self.product_type else ""
         return f"品种: {self.product_id}\n类型: {product_type}" + super().__str__()
 
-    def get_next_bartime(
-        self, dt: datetime, interval: int, interval_type: IntervalType
-    ):
+    def get_next_bartime(self, dt: datetime, interval: int):
         """获取K线的结束时间"""
         product_type = self.product_type
         ticktime = dt
@@ -341,10 +335,10 @@ if __name__ == "__main__":
         print(cal)
 
         print(cal.get("ag"))
-        print(cal.get("t"))
-        print(cal.get("ih"))
-        print(cal.get("c"))
-        print(cal.get("ec"))
-        print(cal.get("bc"))
+        # print(cal.get("t"))
+        # print(cal.get("ih"))
+        # print(cal.get("c"))
+        # print(cal.get("ec"))
+        # print(cal.get("bc"))
 
     print("disconnect mongodb")
