@@ -30,6 +30,8 @@ class Calendar(ABC):
     def __init__(self):
         # 每个交易品种对应不同的交易日历
         self._sub_calendars = {}
+        self._session_time = None
+        self._session_detail_time = None
 
     def get(self, symbol: str = None):
         """根据不同的证券品种获取不同的日历"""
@@ -126,8 +128,12 @@ class Calendar(ABC):
 
             eg. (time(9,30,0), time(15,0,0))
         """
-        sos, eos = self.session
-        return seconds_to_time(sos), seconds_to_time(eos)
+        if not self._session_time:
+            self._session_time = (
+                seconds_to_time(self.session[0]),
+                seconds_to_time(self.session[1]),
+            )
+        return self._session_time
 
     def get_session_detail_time(self) -> Iterable[Tuple[time, time]]:
         """
@@ -135,10 +141,12 @@ class Calendar(ABC):
 
             eg: [(time(9,30,0), time(11,30,0)), (time(13,0,0), time(15,0,0)), ...]
         """
-        return [
-            (seconds_to_time(sos), seconds_to_time(eos))
-            for sos, eos in self.session_details
-        ]
+        if not self._session_detail_time:
+            self._session_detail_time = [
+                (seconds_to_time(sos), seconds_to_time(eos))
+                for sos, eos in self.session_details
+            ]
+        return self._session_detail_time
 
     def is_trading(self, dt: datetime):
         """
@@ -148,6 +156,26 @@ class Calendar(ABC):
             dt = dt.replace(tzinfo=None)
         sos_dt, eos_dt = self.get_session_detail_dt(dt)
         return eos_dt < sos_dt  # 先收盘 再开盘
+
+    string_format = """
+时区: {tz}
+开盘：{sos}\t收盘: {eos}
+交易时间段（不含休息）:
+{session_details}
+K线时间点划分，以10min, 15min, 30min, 1h, 2h, 3h, 4h, 1d为例
+"""
+
+    def __str__(self):
+        sos, eos = self.get_session_time()
+        session_details = []
+        i = 1
+        for _sos, _eos in self.get_session_detail_time():
+            session_details.append(f"\t{i}) {_sos}-{_eos}")
+            i += 1
+
+        return self.string_format.format(
+            tz=self.tz, sos=sos, eos=eos, session_details="\n".join(session_details)
+        )
 
 
 class Time7x24Calendar(Calendar):

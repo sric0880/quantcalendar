@@ -15,10 +15,10 @@ dependencies = [ ]
 [project.optional-dependencies]
 update = [
     "pandas",
-    "exchange_calendars",
+    # "exchange_calendars==4.5.6", # 暂时没用
     "tushare",
     "tqsdk",
-    "chinesecalendar",
+    "chinesecalendar==1.9.2", # 每年要更新
 ]
 
 [tool.setuptools]

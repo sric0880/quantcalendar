@@ -87,6 +87,10 @@ class CalendarCTP(MongoDBCalendar):
         trading_state = self._trade_status[today.date().isoformat()]
         return trading_state == 1
 
+    def __str__(self):
+        product_type = self.product_type.name if self.product_type else ""
+        return f"品种: {self.product_id}\n类型: {product_type}" + super().__str__()
+
     def get_next_bartime(
         self, dt: datetime, interval: int, interval_type: IntervalType
     ):
@@ -326,3 +330,21 @@ def _ctpCrossTimes(timeperiod, interval):  # 可能跨天的时间段
         else:
             return 34200
     return 0
+
+
+if __name__ == "__main__":
+    import quantdata as qd
+
+    with qd.mongo_connect("127.0.0.1") as conn:
+        print("connect mongodb")
+        cal = CalendarCTP(conn)
+        print(cal)
+
+        print(cal.get("ag"))
+        print(cal.get("t"))
+        print(cal.get("ih"))
+        print(cal.get("c"))
+        print(cal.get("ec"))
+        print(cal.get("bc"))
+
+    print("disconnect mongodb")
