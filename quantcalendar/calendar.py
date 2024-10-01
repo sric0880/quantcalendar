@@ -1,11 +1,10 @@
 import copy
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from datetime import datetime, time, timedelta
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Mapping, Tuple
 
 import quantdata as qd
-
-from .next_bartime_utils import get_next_bartime
 
 DB_NAME_CALENDAR = "quantcalendar"
 
@@ -20,67 +19,52 @@ MONTHLY = 30 * 86400
 supproted_bartime = (DAILY, WEEKLY, MONTHLY)
 
 
+class OutOfCalendar(Exception):
+    def __init__(self) -> None:
+        super().__init__("日历越界，请更新日历")
+
+
+SpecialSession = namedtuple(
+    "SpecialSession", ["name", "open_close_sessions", "ordered_sessions"]
+)
+
+
 class Calendar(ABC):
     """
     交易日历
     """
 
-    session_details = ()
+    sessions = ()
     """ 开盘-收盘时间(包括中间的休息时间), 按当天秒数来算 eg. ((32400, 36900), (37800, 41400), (48600, 54000))"""
-    special_session_details = {}
-    """ 特殊"""
+    special_sessions: Mapping[str, SpecialSession] = {}
+    """ 特殊原因提前收盘或者延迟开盘, Key为datetime.date().isoformat()"""
     tz = None
     """ 时区"""
     offset = timedelta()
     """ 有些市场交易时间会跨越凌晨0点, offset表示超过0点的时间差, 越过0点表示下一个交易日"""
     intervals = ()
-    """ 支持的K线周期间隔（单位s）,只支持分钟和小时 eg. (60, 300, 600) 表示 1min, 5min, 10min 的K线时间"""
+    """ 支持的K线周期间隔,单位s,只支持分钟和小时 eg. (60, 300, 600) 表示 1min, 5min, 10min 的K线时间"""
     bartime_side = "right"
     """ K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间"""
 
     def __init__(self):
         # 每个交易品种对应不同的交易日历
         self._sub_calendars = {}
+        # 记录每天交易状态 1-表示交易日
+        self._trade_status = {}
+        self._offset_seconds = self.offset.total_seconds()
+        self._offset_midnight = self.offset - timedelta(days=1)
         self.init()
 
     def init(self):
-        start = self.session_details[0][0]
-        end = self.session_details[-1][1]
-        self._session_time = (seconds_to_time(start), seconds_to_time(end))
-        self._session_detail_time = [
-            (seconds_to_time(sos), seconds_to_time(eos))
-            for sos, eos in self.session_details
+        self._session_time = [
+            (seconds_to_time(sos), seconds_to_time(eos)) for sos, eos in self.sessions
         ]
-        self._sorted_session_detail_time = sorted(
-            self._session_detail_time, key=lambda x: x[0]
+        self._open_close_sessions = (
+            (self._session_time[0][0], self._session_time[-1][1]),
         )
-        self._sorted_special_session = {}
-        #############################
-        # 计算K线时间
-        self._bartimestamp = {}
-        jumps = []
-        last_eos = None
-        for sos, eos in self.session_details:
-            if sos < start:
-                sos += 86400
-            if eos < start:
-                eos += 86400
-            if last_eos is not None:
-                jumps.append((last_eos, sos - last_eos))
-            last_eos = eos
-        if end < start:
-            end += 86400
-        if self.bartime_side == "right":
-            for inte in self.intervals:
-                self._bartimestamp[inte] = self._calc_bartimestamp_right(
-                    start, end, jumps, inte
-                )
-        else:
-            for inte in self.intervals:
-                self._bartimestamp[inte] = self._calc_bartimestamp_left(
-                    start, end, jumps, inte
-                )
-        ##############################
+        self._sorted_session_time = sorted(self._session_time, key=lambda x: x[0])
+        self._bartimestamp = self._calc_bartimestamp(self.sessions)
 
     def add(self, symbol: str, **kwargs):
         """添加不同证券品种的日历"""
@@ -107,6 +91,30 @@ class Calendar(ABC):
         """get trade days <= dt"""
         pass
 
+    def _calc_bartimestamp(self, sessions):
+        start = sessions[0][0]
+        end = sessions[-1][1]
+        jumps = []
+        last_eos = None
+        for sos, eos in sessions:
+            if sos < start:
+                sos += 86400
+            if eos < start:
+                eos += 86400
+            if last_eos is not None:
+                jumps.append((last_eos, sos - last_eos))
+            last_eos = eos
+        if end < start:
+            end += 86400
+        ret = {}
+        if self.bartime_side == "right":
+            for inte in self.intervals:
+                ret[inte] = self._calc_bartimestamp_right(start, end, jumps, inte)
+        else:
+            for inte in self.intervals:
+                ret[inte] = self._calc_bartimestamp_left(start, end, jumps, inte)
+        return ret
+
     def _calc_bartimestamp_left(self, start, end, jumps, inte):
         jump_idx = 0
         jumps_len = len(jumps)
@@ -121,7 +129,7 @@ class Calendar(ABC):
                     jump_idx += 1
                 else:
                     break
-        return list(map(lambda x: x if x <= 86400 else (x - 86400), ret))
+        return list(map(self.__bartime_seconds_to_time, ret))
 
     def _calc_bartimestamp_right(self, start, end, jumps, inte):
         jump_idx = 0
@@ -140,121 +148,174 @@ class Calendar(ABC):
                 ret.append(start)
         if not ret or ret[-1] < end:
             ret.append(end)
-        return list(map(lambda x: x if x <= 86400 else (x - 86400), ret))
+        return list(map(self.__bartime_seconds_to_time, ret))
+
+    def __bartime_seconds_to_time(self, sec):
+        if self._offset_seconds > 0:
+            # 说明交易跨越0点，那么86400解析为time.min
+            return seconds_to_time(sec) if sec < 86400 else seconds_to_time(sec - 86400)
+        else:
+            # 说明交易不跨越0点，那么86400解析为time.max
+            return (
+                seconds_to_time(sec) if sec <= 86400 else seconds_to_time(sec - 86400)
+            )
 
     def get_current_bartime(self, dt: datetime, interval: int):
         """获取K线时间
 
         Params:
-            interval: 秒 K线间隔周期
+            interval(seconds): K线间隔周期
         """
-        barts = self._bartimestamp.get(interval, None)
-        if barts is None:
+        return self.get_bartimes(interval, dt, count=1)[0]
+
+    def _check_add_bartimes(self, lst, bt, range_end, count):
+        if range_end is not None and bt >= range_end:
+            return True
+        lst.append(bt + self.offset)
+        if count > 0 and len(lst) >= count:
+            return True
+        return False
+
+    def get_bartimes(
+        self, interval: int, range_start: datetime, range_end: datetime = None, count=0
+    ) -> List[datetime]:
+        """
+        获取某段时间内所有的K线时间，含range_start，不含range_end，或者取前count个。
+        range_end和count二者必须设置其一
+
+        Params:
+            interval(seconds): K线间隔周期
+        """
+        ret = []
+        times = self._bartimestamp.get(interval, None)
+        dt = range_start - self.offset
+        if times is None:
             if interval == DAILY:
-                pass
+                for day in self.get_tradedays_gte(dt):
+                    close_time = self._to_datetime(
+                        day, self._open_close_sessions[0][-1]
+                    )
+                    if dt <= close_time:
+                        if self._check_add_bartimes(ret, close_time, range_end, count):
+                            return ret
+
             elif interval == WEEKLY:
-                pass
+                last_close_time = None
+                for day in self.get_tradedays_gte(dt):
+                    close_time = self._to_datetime(
+                        day, self._open_close_sessions[0][-1]
+                    )
+                    if last_close_time is not None:
+                        if (
+                            close_time.isocalendar().week
+                            != last_close_time.isocalendar().week
+                        ):
+                            if self._check_add_bartimes(
+                                ret, last_close_time, range_end, count
+                            ):
+                                return ret
+                    if dt > close_time:
+                        continue
+                    last_close_time = close_time
+
             elif interval == MONTHLY:
-                pass
+                last_close_time = None
+                for day in self.get_tradedays_gte(dt):
+                    close_time = self._to_datetime(
+                        day, self._open_close_sessions[0][-1]
+                    )
+                    if last_close_time is not None:
+                        if close_time.month != last_close_time.month:
+                            if self._check_add_bartimes(
+                                ret, last_close_time, range_end, count
+                            ):
+                                return ret
+                    if dt > close_time:
+                        continue
+                    last_close_time = close_time
             else:
                 raise ValueError(f"bartime {interval} not supported")
         else:
-            pass
+            for day in self.get_tradedays_gte(dt):
+                sessions = self._get_sessions_with_breaks(day)
+                bts = list(map(lambda x: self._to_datetime(day, x), times))
+                for sos, eos in sessions:
+                    eos = self._to_datetime(day, eos)
+                    if dt > eos:
+                        continue
+                    sos = self._to_datetime(day, sos)
+                    for bt in bts:
+                        if bt >= dt and bt <= eos and bt >= sos:
+                            if self._check_add_bartimes(ret, bt, range_end, count):
+                                return ret
+        if not ret:
+            raise OutOfCalendar()
+        return ret
+
+    def get_special_sessions(self, dt: datetime):
+        """从配置special_sessions中读取，或者重写该函数"""
+        return self.special_sessions.get(dt.date().isoformat())
 
     def _get_sessions_with_breaks(
         self, dt: datetime
-    ) -> List[Tuple[datetime, datetime]]:
-        special_session = self._sorted_special_session.get(dt.isoformat(), None)
-        if special_session is not None:
-            return special_session
+    ) -> Iterable[Tuple[datetime, datetime]]:
+        s = self.get_special_sessions(dt)
+        if s is not None:
+            return s.ordered_sessions
+        else:
+            return self._sorted_session_time
 
     def _get_sessions_without_breaks(
         self, dt: datetime
-    ) -> List[Tuple[datetime, datetime]]:
-        special_session = self.special_session_details.get(dt.isoformat(), None)
-        if special_session is not None:
-            pass
+    ) -> Iterable[Tuple[datetime, datetime]]:
+        s = self.get_special_sessions(dt)
+        if s is not None:
+            # 一天可能有多次开收盘时间
+            return s.open_close_sessions
+        else:
+            # 正常一天只有一次开收盘时间
+            return self._open_close_sessions
 
-    def get_session_dt(
-        self, dt: datetime, include_breaks=False
-    ) -> Tuple[datetime, datetime]:
-        """
-        给定时间`dt`, 获取下一次(开盘, 收盘)时间。
+    def _to_datetime(self, day: datetime, tm: time):
+        offset = (
+            self.offset
+            if time_to_seconds(tm) >= self._offset_seconds
+            else self._offset_midnight
+        )
+        return datetime.combine(day.date(), tm) - offset
 
-        Params:
-            include_breaks:
-                True: 休息时间段也算是收盘; False: 所有session段走完才算是收盘
-        """
+    def _find_next_session(self, dt: datetime, with_breaks: bool):
         dt = dt - self.offset
         next_sos_dt = next_eos_dt = None
         for day in self.get_tradedays_gte(dt):
-            sessions = self._get_sessions_by_date(day, include_breaks=False)
+            if with_breaks:
+                sessions = self._get_sessions_with_breaks(day)
+            else:
+                sessions = self._get_sessions_without_breaks(day)
             for sos, eos in sessions:
-                if next_sos_dt is None and sos is not None and dt < sos:
-                    next_sos_dt = sos
-                if next_eos_dt is None and eos is not None and dt < eos:
-                    next_eos_dt = eos
-                if next_sos_dt is not None and next_eos_dt is not None:
-                    break
-            # if next_sos_dt is None:
-            #     sos_dt = datetime.combine(day.date(), sos) - self.offset
-            #     if dt < sos_dt:
-            #         next_sos_dt = sos_dt
-            # if next_eos_dt is None:
-            #     eos_dt = datetime.combine(day.date(), eos) - self.offset
-            #     if dt < eos_dt:
-            #         next_eos_dt = eos_dt
-            # if next_sos_dt is not None and next_eos_dt is not None:
-            #     break
+                if next_sos_dt is None and sos is not None:
+                    sos = self._to_datetime(day, sos)
+                    if dt < sos:
+                        next_sos_dt = sos
+                if next_eos_dt is None and eos is not None:
+                    eos = self._to_datetime(day, eos)
+                    if dt <= eos:
+                        next_eos_dt = eos
+            if next_sos_dt is not None and next_eos_dt is not None:
+                break
         if next_sos_dt is None or next_eos_dt is None:
-            raise RuntimeError("日历数据到期了，请更新日历")
+            raise OutOfCalendar()
         return (next_sos_dt + self.offset, next_eos_dt + self.offset)
 
-    # def get_session_detail_dt(self, dt: datetime) -> Tuple[datetime, datetime]:
-    #     """
-    #     给定时间dt, 获取下一次(开盘, 收盘)时间。休息时间段也算是收盘
-    #     """
-    #     dt = dt - self.offset
-    #     next_sos_dt = next_eos_dt = None
-    #     for day in self.get_tradedays_gte(dt):
-    #         for sos, eos in self._sorted_session_detail_time:
-    #             if next_sos_dt is None:
-    #                 offset = (
-    #                     self.offset
-    #                     if time_to_seconds(sos) > self.offset.total_seconds()
-    #                     else self.offset - timedelta(days=1)
-    #                 )
-    #                 sos_dt = datetime.combine(day.date(), sos) - offset
-    #                 if dt < sos_dt and self._tradeday_is_trade(sos_dt):
-    #                     next_sos_dt = sos_dt
-    #             if next_eos_dt is None:
-    #                 offset = (
-    #                     self.offset
-    #                     if time_to_seconds(eos) > self.offset.total_seconds()
-    #                     else self.offset - timedelta(days=1)
-    #                 )
-    #                 eos_dt = datetime.combine(day.date(), eos) - offset
-    #                 if dt <= eos_dt and self._tradeday_is_trade(eos_dt):
-    #                     next_eos_dt = eos_dt
-    #         if next_sos_dt is not None and next_eos_dt is not None:
-    #             break
-    #     if next_sos_dt is None or next_eos_dt is None:
-    #         raise RuntimeError("日历数据到期了，请更新日历")
-    #     return (next_sos_dt + self.offset, next_eos_dt + self.offset)
+    def get_open_close_dt(self, dt: datetime) -> Tuple[datetime, datetime]:
+        """给定时间`dt`, 获取下一次(开盘, 收盘)。"""
+        return self._find_next_session(dt, False)
 
-    def _tradeday_is_trade(self, dt: datetime) -> bool:
+    def get_session_dt(self, dt: datetime) -> Tuple[datetime, datetime]:
         """
-        特殊规则：交易日 也有不交易的时段。比如期货第二天是节假日，夜盘不交易
+        给定时间`dt`, 获取下一次(开盘, 收盘)。休息时间段也算是收盘
         """
-        return True
-
-    def get_session_detail_time(self) -> Iterable[Tuple[time, time]]:
-        """
-        Return:
-
-            eg: [(time(9,30,0), time(11,30,0)), (time(13,0,0), time(15,0,0)), ...]
-        """
-        return self._session_detail_time
+        return self._find_next_session(dt, True)
 
     def is_trading(self, dt: datetime):
         """
@@ -262,27 +323,34 @@ class Calendar(ABC):
         """
         if dt.tzinfo is not None:
             dt = dt.replace(tzinfo=None)
-        sos_dt, eos_dt = self.get_session_detail_dt(dt)
+        sos_dt, eos_dt = self.get_session_dt(dt)
         return eos_dt < sos_dt  # 先收盘 再开盘
+
+    def is_trading_day(self, dt: datetime):
+        """
+        判断是否交易日
+        """
+        today = dt - self.offset
+        return self._trade_status[today.date().isoformat()] == 1
 
     string_format = """
 时区: {tz}
 交易时间段:
-{session_details}
+{sessions}
 K线时间点划分:
 {bartimestamp}
 """
 
     def __str__(self):
-        session_details = []
+        sessions = []
         i = 1
-        for _sos, _eos in self._session_detail_time:
-            session_details.append(f"\t{i}) {_sos}-{_eos}")
+        for _sos, _eos in self._session_time:
+            sessions.append(f"\t{i}) {_sos}-{_eos}")
             i += 1
 
         bartimestamps = []
         for k, v in self._bartimestamp.items():
-            v = list(map(lambda x: seconds_to_time(x).isoformat(), v))
+            v = list(map(lambda x: x.isoformat(), v))
             if len(v) > 8:
                 v = f"[{v[0]},{v[1]},{v[2]},{v[3]},...{v[-4]},{v[-3]},{v[-2]},{v[-1]}]"
             k //= 60
@@ -294,7 +362,7 @@ K线时间点划分:
 
         return self.string_format.format(
             tz=self.tz,
-            session_details="\n".join(session_details),
+            sessions="\n".join(sessions),
             bartimestamp="\n".join(bartimestamps),
         )
 
@@ -307,7 +375,9 @@ class Time7x24Calendar(Calendar):
     如果需要以开盘或者收盘设置定时任务，只需以其一为锚点
     """
 
-    session_details = ((0, 86400),)
+    sessions = ((0, 86400),)
+    # 1m - 3m - 5m - 10m - 15m - 30m - 1H - 2H - 3H - 4H
+    intervals = (60, 180, 300, 600, 900, 1800, I1H, I2H, I3H, I4H)
 
     def get_tradedays_gte(self, dt: datetime) -> List[datetime]:
         """get trade days >= dt 取一年时间"""
@@ -318,10 +388,6 @@ class Time7x24Calendar(Calendar):
         """get trade days <= dt 取一年时间"""
         start_dt = datetime.combine(dt.date(), time(0, 0, 0), tzinfo=dt.tzinfo)
         return [start_dt + timedelta(days=i) for i in range(-364, 1, 1)]
-
-    def get_next_bartime(self, dt: datetime, interval: int):
-        """获取K线的结束时间"""
-        return get_next_bartime(dt, interval)
 
     def is_trading(self, dt: datetime):
         return True
@@ -336,7 +402,6 @@ class MongoDBCalendar(Calendar):
         self._tradedays: list = []
         # 为了加速`get_tradedays_gte`和`get_tradedays_lte`的执行
         self._tradedays_indexers: dict = {}
-        self._trade_status = {}
 
         for day in days:
             dt = day["_id"]
@@ -369,7 +434,8 @@ class MongoDBCalendar(Calendar):
 
 def seconds_to_time(seconds):
     if seconds == 86400:
-        return time(0, 0, 0)
+        # 如果以86400收盘，那么会解析为time(23, 59, 59, 999999)
+        return time.max
     result = []
     for count in (3600, 60, 1):
         value = seconds // count
@@ -380,3 +446,8 @@ def seconds_to_time(seconds):
 
 def time_to_seconds(tm: time):
     return tm.hour * 3600 + tm.minute * 60 + tm.second
+
+
+if __name__ == "__main__":
+    cal = Time7x24Calendar()
+    print(cal)

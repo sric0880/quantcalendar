@@ -53,11 +53,40 @@ def download_and_save_answers(symbols):
 if __name__ == "__main__":
     symbols = [
         ("AG2412", datetime.timedelta(hours=15)),
-        ("T2409", datetime.timedelta(hours=15, minutes=15)),
+        ("T2412", datetime.timedelta(hours=15, minutes=15)),
         ("IH2409", datetime.timedelta(hours=15)),
         ("C2411", datetime.timedelta(hours=15)),
         ("EC2412", datetime.timedelta(hours=15)),
-        ("BC2411", datetime.timedelta(hours=15)),
+        ("CU2411", datetime.timedelta(hours=15)),
     ]
 
     download_and_save_answers(symbols)
+
+    # K线缺失导致计算错误，需要纠正
+    file = "tests/next_bartime_answers/AG2412_15m.pickle"
+    series = pd.read_pickle(file)
+    # 2024-08-30 23:48:32.562814070: 2024-08-31 00:15:00 != 2024-08-31 00:00:00
+    series["2024-08-30 23:48:32.562814070"] = pd.Timestamp("2024-08-31 00:00:00")
+    # print(series["2024-08-30 23:48:32.562814070"])
+    series.to_pickle(file)
+
+    file = "tests/next_bartime_answers/C2411_1m.pickle"
+    series = pd.read_pickle(file)
+    # 2024-09-25 14:42:50.954773869: 2024-09-25 14:44:00 != 2024-09-25 14:43:00
+    series["2024-09-25 14:42:50.954773869"] = pd.Timestamp("2024-09-25 14:43:00")
+    # print(series["2024-09-25 14:42:50.954773869"])
+    series.to_pickle(file)
+
+    file = "tests/next_bartime_answers/CU2411_1H.pickle"
+    series = pd.read_pickle(file)
+    # 2024-06-28 23:04:49.447236180: 2024-06-29 01:00:00 != 2024-06-29 00:00:00
+    series["2024-06-28 23:04:49.447236180"] = pd.Timestamp("2024-06-29 00:00:00")
+    # print(series["2024-06-28 23:04:49.447236180"])
+    series.to_pickle(file)
+
+    file = "tests/next_bartime_answers/EC2412_1m.pickle"
+    series = pd.read_pickle(file)
+    # 2024-09-25 14:40:42.211055276: 2024-09-25 14:44:00 != 2024-09-25 14:41:00
+    series["2024-09-25 14:40:42.211055276"] = pd.Timestamp("2024-09-25 14:41:00")
+    # print(series["2024-09-25 14:40:42.211055276"])
+    series.to_pickle(file)

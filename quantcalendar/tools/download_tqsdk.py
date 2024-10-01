@@ -2,7 +2,7 @@ from contextlib import closing
 from datetime import datetime
 
 import pandas as pd
-from chinese_calendar import get_holiday_detail, is_workday
+from chinese_calendar import get_holiday_detail
 
 from quantcalendar import calendar_ctp
 
@@ -26,7 +26,8 @@ def _download_trade_cal(api, end_dt):
     dates = pd.date_range(df["_id"].iloc[0].date(), df["_id"].iloc[-1].date())
 
     status = dates.map(_get_trading_day_detail)
-    assert -1 not in status
+    # 节假日连着的周末全部标记为节假日
+    status = _weekends_to_holidays(status.to_list())
     newdf = pd.DataFrame({"_id": dates, "status": status})
     newdf["status"] = newdf["status"].astype("int8")
     # 特例：除夕当天上班，但是不开市
@@ -106,21 +107,33 @@ def _is_weekend(dt):
 
 def _get_trading_day_detail(dt):
     holiday, holiday_name = get_holiday_detail(dt)
-    if holiday and holiday_name is not None:
-        return 3  # holiday
-    workday = is_workday(dt)
-    weekend = _is_weekend(dt)
-    if weekend:
-        if not workday:
+    if holiday:
+        if holiday_name is not None:
+            return 3  # holiday
+        else:
+            return 2  # weekend
+    else:
+        if _is_weekend(dt):
             return 2  # weekend
         else:
-            next_day = _get_trading_day_detail(dt + pd.Timedelta(days=1))
-            if next_day == -1 or next_day == 3:
-                return next_day
-            elif next_day == 1 or next_day == 2:
-                return 2  # weekend
-    else:
-        if workday:
-            return 1  # trading
-        else:
-            return -1  # undefined
+            return 1  # workday
+
+
+def _weekends_to_holidays(status):
+    all_3 = []
+    for i, s in enumerate(status):
+        if s == 3:
+            all_3.append(i)
+
+    for i in all_3:
+        for j in range(i - 1, -1, -1):
+            if status[j] == 2:
+                status[j] = 3
+            else:
+                break
+        for j in range(i + 1, len(status)):
+            if status[j] == 2:
+                status[j] = 3
+            else:
+                break
+    return status

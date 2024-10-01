@@ -1,6 +1,6 @@
 from zoneinfo import ZoneInfo
 
-from .calendar import MongoDBCalendar
+from .calendar import I1H, I2H, MongoDBCalendar
 
 __all__ = ["CalendarAstock"]
 
@@ -11,10 +11,10 @@ class CalendarAstock(MongoDBCalendar):
     """
 
     COLLECTION_NAME = "cn_stock"
-    session_details = ((34200, 41400), (46800, 54000))
+    sessions = ((34200, 41400), (46800, 54000))
     tz = ZoneInfo("Asia/Shanghai")
     # 1m - 5m - 15m - 30m - 1H - 2H
-    intervals = (60, 300, 900, 1800, 3600, 7200)
+    intervals = (60, 300, 900, 1800, I1H, I2H)
 
 
 if __name__ == "__main__":
