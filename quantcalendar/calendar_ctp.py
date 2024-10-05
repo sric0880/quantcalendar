@@ -13,7 +13,7 @@ from .calendar import (
     I3H,
     I4H,
     MongoDBCalendar,
-    SpecialSession,
+    SpecialSessions,
 )
 
 __all__ = ["CalendarCTP"]
@@ -43,8 +43,7 @@ class CalendarCTP(MongoDBCalendar):
     COLLECTION_NAME_SESSIONS = "cn_future_sessions"
     sessions = ((75600, 9000), (32400, 54900))
     tz = ZoneInfo("Asia/Shanghai")
-    # 为防止边界条件，多加1微妙
-    offset = timedelta(hours=2, minutes=30, microseconds=1)
+    offset = timedelta(hours=2, minutes=30)
     # 1m - 3m - 5m - 10m - 15m - 30m - 1H - 2H - 3H - 4H
     intervals = (60, 180, 300, 600, 900, 1800, I1H, I2H, I3H, I4H)
 
@@ -112,7 +111,7 @@ def _convert_symbol(symbol: str):
 
 
 def _specialses_before_holiday(cal):
-    return SpecialSession(
+    return SpecialSessions(
         name=1,
         open_close_sessions=((None, cal._session_time[-1][-1]),),  # 删除夜盘开盘时间
         ordered_sessions=cal._sorted_session_time_without_night,
@@ -120,7 +119,7 @@ def _specialses_before_holiday(cal):
 
 
 def _specialses_after_holiday(cal):
-    return SpecialSession(
+    return SpecialSessions(
         name=2,
         open_close_sessions=(
             (time(9), None),  # 额外添加一个开盘时间

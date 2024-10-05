@@ -8,6 +8,7 @@ import quantdata as qd
 
 from quantcalendar.calendar_astock import CalendarAstock
 from quantcalendar.calendar_ctp import CalendarCTP
+from quantcalendar.calendar_7x24 import Time7x24Calendar
 from quantcalendar.calendar import (
     I1H,
     I2H,
@@ -16,7 +17,6 @@ from quantcalendar.calendar import (
     DAILY,
     WEEKLY,
     MONTHLY,
-    Time7x24Calendar,
 )
 
 
@@ -31,32 +31,41 @@ def mongo_client():
 
 def test_calendar_7x24_bartime():
     cal = Time7x24Calendar()
-    assert cal.get_current_bartime(datetime(2024, 9, 13), 60) == datetime(
-        2024, 9, 13, 0, 1
-    )
-    assert cal.get_current_bartime(datetime(2024, 9, 13), 300) == datetime(
-        2024, 9, 13, 0, 5
-    )
-    assert cal.get_current_bartime(datetime(2024, 9, 13), 900) == datetime(
-        2024, 9, 13, 0, 15
-    )
-    assert cal.get_current_bartime(datetime(2024, 9, 13, 0, 1), 60) == datetime(
-        2024, 9, 13, 0, 1
-    )
-    assert cal.get_current_bartime(datetime(2024, 9, 13, 23, 59, 1), 60) == datetime(
-        2024, 9, 13, 23, 59, 59, 999999
-    )
+    bartime_testcases = [
+        (datetime(2024, 9, 13), datetime(2024, 9, 13), 60),
+        (datetime(2024, 9, 13), datetime(2024, 9, 13), 300),
+        (datetime(2024, 9, 13), datetime(2024, 9, 13), 900),
+        (datetime(2024, 9, 13, 0, 0, 1), datetime(2024, 9, 13, 0, 1), 60),
+        (datetime(2024, 9, 13, 0, 1, 0), datetime(2024, 9, 13, 0, 1), 60),
+        (datetime(2024, 9, 13, 0, 0, 1), datetime(2024, 9, 13, 0, 5), 300),
+        (datetime(2024, 9, 13, 0, 0, 1), datetime(2024, 9, 13, 0, 15), 900),
+        (datetime(2024, 9, 13, 23, 59, 1), datetime(2024, 9, 14), 60),
+        (datetime(2024, 9, 13, 23), datetime(2024, 9, 13, 23), I1H),
+        (datetime(2024, 9, 30), datetime(2024, 10, 1), MONTHLY),
+        (datetime(2024, 9, 30, 1), datetime(2024, 10, 1), MONTHLY),
+        (datetime(2024, 10, 1), datetime(2024, 10, 1), MONTHLY),
+        (datetime(2024, 10, 1, 1), datetime(2024, 11, 1), MONTHLY),
+        (datetime(2024, 9, 15), datetime(2024, 9, 16), WEEKLY),
+        (datetime(2024, 9, 15, 1), datetime(2024, 9, 16), WEEKLY),
+        (datetime(2024, 9, 16), datetime(2024, 9, 16), WEEKLY),
+        (datetime(2024, 9, 16, 1), datetime(2024, 9, 23), WEEKLY),
+        (datetime(2024, 9, 13), datetime(2024, 9, 13), DAILY),
+        (datetime(2024, 9, 13, 1), datetime(2024, 9, 14), DAILY),
+    ]
+    for query, answer, interval in bartime_testcases:
+        assert cal.get_current_bartime(query, interval) == answer
 
     bartimes = cal.get_bartimes(MONTHLY, datetime(2024, 9, 13), count=20)
-    assert bartimes[1] == datetime(2024, 10, 31, 23, 59, 59, 999999)
+    assert bartimes[0] == datetime(2024, 10, 1)
+    assert bartimes[1] == datetime(2024, 11, 1)
 
     bartimes = cal.get_bartimes(WEEKLY, datetime(2024, 9, 13), count=20)
-    assert bartimes[0] == datetime(2024, 9, 15, 23, 59, 59, 999999)
+    assert bartimes[0] == datetime(2024, 9, 16)
 
     bartimes = cal.get_bartimes(DAILY, datetime(2024, 9, 13), count=20)
     assert len(bartimes) == 20
-    assert bartimes[0] == datetime(2024, 9, 13, 23, 59, 59, 999999)
-    assert bartimes[-1] == datetime(2024, 10, 2, 23, 59, 59, 999999)
+    assert bartimes[0] == datetime(2024, 9, 13)
+    assert bartimes[-1] == datetime(2024, 10, 2)
 
     bartimes = cal.get_bartimes(
         1800, datetime(2024, 9, 13, 1, 0, 1), range_end=datetime(2024, 9, 14)
@@ -67,8 +76,14 @@ def test_calendar_7x24_bartime():
         I4H, datetime(2024, 9, 13), range_end=datetime(2024, 9, 14)
     )
     assert len(bartimes) == 6
-    assert bartimes[0] == datetime(2024, 9, 13, 4)
-    assert bartimes[-1] == datetime(2024, 9, 13, 23, 59, 59, 999999)
+    assert bartimes == [
+        datetime(2024, 9, 13),
+        datetime(2024, 9, 13, 4),
+        datetime(2024, 9, 13, 8),
+        datetime(2024, 9, 13, 12),
+        datetime(2024, 9, 13, 16),
+        datetime(2024, 9, 13, 20),
+    ]
 
 
 def test_calendar_astock(mongo_client):
