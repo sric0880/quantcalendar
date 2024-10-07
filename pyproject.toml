@@ -10,7 +10,7 @@ authors = [
 ]
 description = "trade calendar"
 requires-python = ">=3.9"
-dependencies = [ ]
+dependencies = [ "quantdata" ]
 
 [project.optional-dependencies]
 update = [

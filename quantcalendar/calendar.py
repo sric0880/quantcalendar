@@ -324,9 +324,17 @@ class Calendar(ABC):
         """
         return self._find_next_session(dt, True)
 
+    def get_sessions(self):
+        """返回交易时间段"""
+        return self._session_time
+
+    def get_open_close_time(self):
+        """返回开盘收盘时间"""
+        return self._open_close_sessions[0]
+
     def is_trading(self, dt: datetime):
         """
-        判断当前时间是否正在交易中, dt时间必须是交易所本地时间
+        判断时间`dt`是否正在交易中, `dt`时间必须是交易所本地时间
         """
         if dt.tzinfo is not None:
             dt = dt.replace(tzinfo=None)
