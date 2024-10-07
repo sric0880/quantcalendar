@@ -328,6 +328,10 @@ class Calendar(ABC):
         """返回交易时间段"""
         return self._session_time
 
+    def get_ordered_sessions(self):
+        """返回交易时间段(按开盘时间从小到大排序)"""
+        return self._sorted_session_time
+
     def get_open_close_time(self):
         """返回开盘收盘时间"""
         return self._open_close_sessions[0]
@@ -347,6 +351,20 @@ class Calendar(ABC):
         """
         _, today = self._to_offset_dt(dt)
         return self._trade_status[today.date().isoformat()] == 1
+
+    def is_trading_time(self, dt: datetime):
+        """
+        判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
+        """
+        tm = dt.time()
+        for start, end in self._sorted_session_time:
+            if start < end:
+                if tm >= start and tm <= end:
+                    return True
+            else:
+                if tm >= start or tm <= end:
+                    return True
+        return False
 
     string_format = """
 时区: {tz}
