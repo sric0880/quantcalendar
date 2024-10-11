@@ -27,6 +27,21 @@ class Time7x24Calendar(Calendar):
         start_dt = datetime.combine(dt.date(), time(0, 0, 0), tzinfo=dt.tzinfo)
         return [start_dt + timedelta(days=i) for i in range(-364, 1, 1)]
 
+    def get_tradedays_between(
+        self, start_dt: datetime, end_dt: datetime
+    ) -> List[datetime]:
+        """get start_dt <= trade days <= end_dt"""
+        ret = []
+        start_dt = datetime.combine(
+            start_dt.date(), time(0, 0, 0), tzinfo=start_dt.tzinfo
+        )
+        end_dt = datetime.combine(end_dt.date(), time(0, 0, 0), tzinfo=end_dt.tzinfo)
+        next_day = start_dt
+        while next_day <= end_dt:
+            ret.append(next_day)
+            next_day += timedelta(days=1)
+        return ret
+
     def is_trading(self, dt: datetime):
         return True
 

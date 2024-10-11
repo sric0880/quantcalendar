@@ -31,6 +31,14 @@ def mongo_client():
 
 def test_calendar_7x24_bartime():
     cal = Time7x24Calendar()
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 13)) == [
+        datetime(2024, 9, 13)
+    ]
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 14)) == [
+        datetime(2024, 9, 13),
+        datetime(2024, 9, 14),
+    ]
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 12)) == []
     bartime_testcases = [
         (datetime(2024, 9, 13), datetime(2024, 9, 13), 60),
         (datetime(2024, 9, 13), datetime(2024, 9, 13), 300),
@@ -92,6 +100,13 @@ def test_calendar_astock(mongo_client):
     assert cal.get_tradedays_lte(datetime(2024, 9, 17))[-1] == datetime(2024, 9, 13)
     assert cal.get_tradedays_lte(datetime(2024, 9, 14))[-1] == datetime(2024, 9, 13)
     assert cal.get_tradedays_lte(datetime(2024, 9, 13))[-1] == datetime(2024, 9, 13)
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 17)) == [
+        datetime(2024, 9, 13)
+    ]
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 18)) == [
+        datetime(2024, 9, 13),
+        datetime(2024, 9, 18),
+    ]
     assert cal.is_trading(datetime(2024, 9, 20, 9, 0)) == False
     assert cal.is_trading(datetime(2024, 9, 20, 9, 30)) == True
     assert cal.is_trading(datetime(2024, 9, 20, 11, 30)) == True

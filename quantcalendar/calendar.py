@@ -98,6 +98,13 @@ class Calendar(ABC):
         """get trade days <= dt"""
         pass
 
+    @abstractmethod
+    def get_tradedays_between(
+        self, start_dt: datetime, end_dt: datetime
+    ) -> List[datetime]:
+        """get start_dt <= trade days <= end_dt"""
+        pass
+
     def _calc_bartimestamp(self, sessions):
         start = sessions[0][0]
         end = sessions[-1][1]
@@ -426,19 +433,19 @@ class MongoDBCalendar(Calendar):
 
     def get_tradedays_gte(self, dt: datetime) -> List[datetime]:
         """get trade days >= dt"""
-        indexers = self._tradedays_indexers.get(dt.date().isoformat(), None)
-        if indexers is None:
-            return []
-        else:
-            return self._tradedays[indexers[1] :]
+        return self._tradedays[self._tradedays_indexers[dt.date().isoformat()][1] :]
 
     def get_tradedays_lte(self, dt: datetime) -> List[datetime]:
         """get trade days <= dt"""
-        indexers = self._tradedays_indexers.get(dt.date().isoformat(), None)
-        if indexers is None:
-            return []
-        else:
-            return self._tradedays[: indexers[0] + 1]
+        return self._tradedays[: self._tradedays_indexers[dt.date().isoformat()][0] + 1]
+
+    def get_tradedays_between(
+        self, start_dt: datetime, end_dt: datetime
+    ) -> List[datetime]:
+        """get start_dt <= trade days <= end_dt"""
+        st_idx = self._tradedays_indexers[start_dt.date().isoformat()]
+        end_idx = self._tradedays_indexers[end_dt.date().isoformat()]
+        return self._tradedays[st_idx[1] : end_idx[0] + 1]
 
 
 def _check_next_month(day, last_day):
