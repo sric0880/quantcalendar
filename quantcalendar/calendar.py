@@ -185,20 +185,12 @@ class Calendar(ABC):
         """
         return self.get_bartimes(interval, dt, count=1)[0]
 
-    def _check_add_bartimes(self, lst, bt, range_end, count):
-        if range_end is not None and bt >= range_end:
-            return True
-        lst.append(bt + self.offset)
-        if count > 0 and len(lst) >= count:
-            return True
-        return False
-
     def get_bartimes(
-        self, interval: int, range_start: datetime, range_end: datetime = None, count=0
+        self, interval: int, start: datetime, end: datetime = None, count=0
     ) -> List[datetime]:
         """
-        获取某段时间内所有的K线时间，含range_start，不含range_end，或者取前count个。
-        range_end和count二者必须设置其一
+        获取某段时间内所有的K线时间，含start，不含end，或者取前count个。
+        end和count二者必须设置其一
 
         TODO: 还需要实现 bartime_side==left
 
@@ -206,8 +198,17 @@ class Calendar(ABC):
             interval(seconds): K线间隔周期
         """
         ret = []
+
+        def _check_append_conditions(bt):
+            if end is not None and bt >= end:
+                return True
+            ret.append(bt + self.offset)
+            if count > 0 and len(ret) >= count:
+                return True
+            return False
+
         times = self._bartimestamp.get(interval, None)
-        dt, start_day = self._to_offset_dt(range_start)
+        dt, start_day = self._to_offset_dt(start)
         if times is None:
             if interval == DAILY:
                 for day in self.get_tradedays_gte(start_day):
@@ -215,17 +216,17 @@ class Calendar(ABC):
                         day, self._open_close_sessions[0][-1]
                     )
                     if dt <= close_time:
-                        if self._check_add_bartimes(ret, close_time, range_end, count):
+                        if _check_append_conditions(close_time):
                             return ret
 
             elif interval == WEEKLY:
                 for close_time in self._get_bartimes(dt, start_day, _check_next_week):
-                    if self._check_add_bartimes(ret, close_time, range_end, count):
+                    if _check_append_conditions(close_time):
                         return ret
 
             elif interval == MONTHLY:
                 for close_time in self._get_bartimes(dt, start_day, _check_next_month):
-                    if self._check_add_bartimes(ret, close_time, range_end, count):
+                    if _check_append_conditions(close_time):
                         return ret
             else:
                 raise ValueError(f"bartime {interval} not supported")
@@ -240,7 +241,7 @@ class Calendar(ABC):
                     sos = self._combine_date_time_sos(day, sos)
                     for bt in bts:
                         if bt >= dt and bt <= eos and bt >= sos:
-                            if self._check_add_bartimes(ret, bt, range_end, count):
+                            if _check_append_conditions(bt):
                                 return ret
         if not ret:
             raise OutOfCalendar()
@@ -266,95 +267,135 @@ class Calendar(ABC):
                     yield (day, last_day)
             last_day = day
 
-    @overload
-    def get_tradedays_month_end(self, dt: datetime) -> List[datetime]:
-        """return all month ends >=`dt`"""
-
-    @overload
-    def get_tradedays_month_end(self, dt: datetime, count: int) -> List[datetime]:
-        """return n month ends >=`dt`"""
-
-    def get_tradedays_month_end(self, dt: datetime, count: int = 0) -> List[datetime]:
+    def _get_tradedays_xxx_end(
+        self, start: datetime, end: datetime, count: int, check_func
+    ) -> List[datetime]:
         ret = []
-        for d in self._get_certain_tradedays(dt, _check_next_month):
-            ret.append(d[1])
-            count -= 1
-            if count == 0:
+        for d in self._get_certain_tradedays(start, check_func):
+            bt = d[1]
+            if end is not None and bt > end:
+                break
+            ret.append(bt)
+            if count > 0 and len(ret) >= count:
+                break
+        return ret
+
+    def _get_tradedays_xxx_begin(
+        self, start: datetime, end: datetime, count: int, check_func
+    ) -> List[datetime]:
+        ret = []
+        last_tradeday = self.get_tradedays_last(start - timedelta(days=1))
+        for d in self._get_certain_tradedays(last_tradeday, check_func):
+            bt = d[0]
+            if end is not None and bt > end:
+                break
+            ret.append(bt)
+            if count > 0 and len(ret) >= count:
                 break
         return ret
 
     @overload
-    def get_tradedays_month_begin(self, dt: datetime) -> List[datetime]:
-        """return all month begins >=`dt`"""
+    def get_tradedays_month_end(self, start: datetime) -> List[datetime]:
+        """return all month ends >=`start`"""
 
     @overload
-    def get_tradedays_month_begin(self, dt: datetime, count: int) -> List[datetime]:
-        """return n month begins >=`dt`"""
-
-    def get_tradedays_month_begin(self, dt: datetime, count: int = 0) -> List[datetime]:
-        ret = []
-        last_tradeday = self.get_tradedays_last(dt - timedelta(days=1))
-        for d in self._get_certain_tradedays(last_tradeday, _check_next_month):
-            ret.append(d[0])
-            count -= 1
-            if count == 0:
-                break
-        return ret
+    def get_tradedays_month_end(self, start: datetime, *, count: int) -> List[datetime]:
+        """return n month ends >=`start`"""
 
     @overload
-    def get_tradedays_week_end(self, dt: datetime) -> List[datetime]:
-        """return all week ends >=`dt`"""
+    def get_tradedays_month_end(self, start: datetime, end: datetime) -> List[datetime]:
+        """return all `end` >= monthends >=`start`"""
+
+    def get_tradedays_month_end(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        return self._get_tradedays_xxx_end(start, end, count, _check_next_month)
 
     @overload
-    def get_tradedays_week_end(self, dt: datetime, count: int) -> List[datetime]:
-        """return n week ends >=`dt`"""
-
-    def get_tradedays_week_end(self, dt: datetime, count: int = 0) -> List[datetime]:
-        ret = []
-        for d in self._get_certain_tradedays(dt, _check_next_week):
-            ret.append(d[1])
-            count -= 1
-            if count == 0:
-                break
-        return ret
+    def get_tradedays_month_begin(self, start: datetime) -> List[datetime]:
+        """return all month begins >=`start`"""
 
     @overload
-    def get_tradedays_week_begin(self, dt: datetime) -> List[datetime]:
-        """return all week begins >=`dt`"""
+    def get_tradedays_month_begin(
+        self, start: datetime, *, count: int
+    ) -> List[datetime]:
+        """return n month begins >=`start`"""
 
     @overload
-    def get_tradedays_week_begin(self, dt: datetime, count: int) -> List[datetime]:
-        """return n week begins >=`dt`"""
+    def get_tradedays_month_begin(
+        self, start: datetime, end: datetime
+    ) -> List[datetime]:
+        """return all `end` >= month begins >=`start`"""
 
-    def get_tradedays_week_begin(self, dt: datetime, count: int = 0) -> List[datetime]:
-        ret = []
-        last_tradeday = self.get_tradedays_last(dt - timedelta(days=1))
-        for d in self._get_certain_tradedays(last_tradeday, _check_next_week):
-            ret.append(d[0])
-            count -= 1
-            if count == 0:
-                break
-        return ret
+    def get_tradedays_month_begin(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        return self._get_tradedays_xxx_begin(start, end, count, _check_next_month)
 
     @overload
-    def get_tradedays_week_day(self, weekday: int, dt: datetime) -> List[datetime]:
-        """return all trading `weekday` >=`dt`, , weekday in [1, 7]"""
+    def get_tradedays_week_end(self, start: datetime) -> List[datetime]:
+        """return all week ends >=`start`"""
+
+    @overload
+    def get_tradedays_week_end(self, start: datetime, *, count: int) -> List[datetime]:
+        """return n week ends >=`start`"""
+
+    @overload
+    def get_tradedays_week_end(self, start: datetime, end: datetime) -> List[datetime]:
+        """return all `end` >= week ends >=`start`"""
+
+    def get_tradedays_week_end(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        return self._get_tradedays_xxx_end(start, end, count, _check_next_week)
+
+    @overload
+    def get_tradedays_week_begin(self, start: datetime) -> List[datetime]:
+        """return all week begins >=`start`"""
+
+    @overload
+    def get_tradedays_week_begin(
+        self, start: datetime, *, count: int
+    ) -> List[datetime]:
+        """return n week begins >=`start`"""
+
+    @overload
+    def get_tradedays_week_begin(
+        self, start: datetime, end: datetime
+    ) -> List[datetime]:
+        """return all `end` >= week begins >=`start`"""
+
+    def get_tradedays_week_begin(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        return self._get_tradedays_xxx_begin(start, end, count, _check_next_week)
+
+    @overload
+    def get_tradedays_week_day(self, weekday: int, start: datetime) -> List[datetime]:
+        """return all trading `weekday` >=`start`, , weekday in [1, 7]"""
 
     @overload
     def get_tradedays_week_day(
-        self, weekday: int, dt: datetime, count: int
+        self, weekday: int, start: datetime, *, count: int
     ) -> List[datetime]:
-        """return n trading `weekday` >=`dt`, weekday in [1, 7]"""
+        """return n trading `weekday` >=`start`, weekday in [1, 7]"""
+
+    @overload
+    def get_tradedays_week_day(
+        self, weekday: int, start: datetime, end: datetime
+    ) -> List[datetime]:
+        """return all `end` >= trading `weekday` >=`start`, weekday in [1, 7]"""
 
     def get_tradedays_week_day(
-        self, weekday: int, dt: datetime, count: int = 0
+        self, weekday: int, start: datetime, end: datetime = None, count: int = 0
     ) -> List[datetime]:
         ret = []
-        for day in self.get_tradedays_gte(dt):
+        for day in self.get_tradedays_gte(start):
             if _check_week_day(day, weekday):
+                if end is not None and day > end:
+                    break
                 ret.append(day)
-                count -= 1
-                if count == 0:
+                if count > 0 and len(ret) >= count:
                     break
         return ret
 

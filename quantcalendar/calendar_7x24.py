@@ -39,32 +39,40 @@ class Time7x24Calendar(Calendar):
         """equal to get_tradedays_lte(dt)[-1]"""
         return datetime.combine(dt.date(), time(0, 0, 0), tzinfo=dt.tzinfo)
 
-    def get_tradedays_month_end(self, dt: datetime, count: int) -> List[datetime]:
-        if count <= 0:
+    def get_tradedays_month_end(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        if count <= 0 and end is None:
             raise OverflowError("infinite generated days, count must be great than 0")
-        return super().get_tradedays_month_end(dt, count)
+        return super().get_tradedays_month_end(start, end, count)
 
-    def get_tradedays_month_begin(self, dt: datetime, count: int) -> List[datetime]:
-        if count <= 0:
+    def get_tradedays_month_begin(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        if count <= 0 and end is None:
             raise OverflowError("infinite generated days, count must be great than 0")
-        return super().get_tradedays_month_begin(dt, count)
+        return super().get_tradedays_month_begin(start, end, count)
 
-    def get_tradedays_week_end(self, dt: datetime, count: int) -> List[datetime]:
-        if count <= 0:
+    def get_tradedays_week_end(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        if count <= 0 and end is None:
             raise OverflowError("infinite generated days, count must be great than 0")
-        return super().get_tradedays_week_end(dt, count)
+        return super().get_tradedays_week_end(start, end, count)
 
-    def get_tradedays_week_begin(self, dt: datetime, count: int) -> List[datetime]:
-        if count <= 0:
+    def get_tradedays_week_begin(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ) -> List[datetime]:
+        if count <= 0 and end is None:
             raise OverflowError("infinite generated days, count must be great than 0")
-        return super().get_tradedays_week_begin(dt, count)
+        return super().get_tradedays_week_begin(start, end, count)
 
     def get_tradedays_week_day(
-        self, weekday: int, dt: datetime, count: int
+        self, weekday: int, start: datetime, end: datetime = None, count: int = 0
     ) -> List[datetime]:
-        if count <= 0:
+        if count <= 0 and end is None:
             raise OverflowError("infinite generated days, count must be great than 0")
-        return super().get_tradedays_week_day(weekday, dt, count)
+        return super().get_tradedays_week_day(weekday, start, end, count)
 
     def get_tradedays_between(
         self, start_dt: datetime, end_dt: datetime
