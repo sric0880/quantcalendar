@@ -2,7 +2,7 @@ import copy
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from datetime import datetime, time, timedelta
-from typing import Iterable, List, Mapping, Tuple
+from typing import Iterable, List, Mapping, Tuple, overload
 
 import quantdata as qd
 
@@ -96,6 +96,16 @@ class Calendar(ABC):
     @abstractmethod
     def get_tradedays_lte(self, dt: datetime) -> List[datetime]:
         """get trade days <= dt"""
+        pass
+
+    @abstractmethod
+    def get_tradedays_next(self, dt: datetime) -> datetime:
+        """equal to get_tradedays_gte(dt)[0]"""
+        pass
+
+    @abstractmethod
+    def get_tradedays_last(self, dt: datetime) -> datetime:
+        """equal to get_tradedays_lte(dt)[-1]"""
         pass
 
     @abstractmethod
@@ -247,6 +257,106 @@ class Calendar(ABC):
             if dt > close_time:
                 continue
             last_day = day
+
+    def _get_certain_tradedays(self, dt, check_func):
+        last_day = None
+        for day in self.get_tradedays_gte(dt):
+            if last_day is not None:
+                if check_func(day, last_day):
+                    yield (day, last_day)
+            last_day = day
+
+    @overload
+    def get_tradedays_month_end(self, dt: datetime) -> List[datetime]:
+        """return all month ends >=`dt`"""
+
+    @overload
+    def get_tradedays_month_end(self, dt: datetime, count: int) -> List[datetime]:
+        """return n month ends >=`dt`"""
+
+    def get_tradedays_month_end(self, dt: datetime, count: int = 0) -> List[datetime]:
+        ret = []
+        for d in self._get_certain_tradedays(dt, _check_next_month):
+            ret.append(d[1])
+            count -= 1
+            if count == 0:
+                break
+        return ret
+
+    @overload
+    def get_tradedays_month_begin(self, dt: datetime) -> List[datetime]:
+        """return all month begins >=`dt`"""
+
+    @overload
+    def get_tradedays_month_begin(self, dt: datetime, count: int) -> List[datetime]:
+        """return n month begins >=`dt`"""
+
+    def get_tradedays_month_begin(self, dt: datetime, count: int = 0) -> List[datetime]:
+        ret = []
+        last_tradeday = self.get_tradedays_last(dt - timedelta(days=1))
+        for d in self._get_certain_tradedays(last_tradeday, _check_next_month):
+            ret.append(d[0])
+            count -= 1
+            if count == 0:
+                break
+        return ret
+
+    @overload
+    def get_tradedays_week_end(self, dt: datetime) -> List[datetime]:
+        """return all week ends >=`dt`"""
+
+    @overload
+    def get_tradedays_week_end(self, dt: datetime, count: int) -> List[datetime]:
+        """return n week ends >=`dt`"""
+
+    def get_tradedays_week_end(self, dt: datetime, count: int = 0) -> List[datetime]:
+        ret = []
+        for d in self._get_certain_tradedays(dt, _check_next_week):
+            ret.append(d[1])
+            count -= 1
+            if count == 0:
+                break
+        return ret
+
+    @overload
+    def get_tradedays_week_begin(self, dt: datetime) -> List[datetime]:
+        """return all week begins >=`dt`"""
+
+    @overload
+    def get_tradedays_week_begin(self, dt: datetime, count: int) -> List[datetime]:
+        """return n week begins >=`dt`"""
+
+    def get_tradedays_week_begin(self, dt: datetime, count: int = 0) -> List[datetime]:
+        ret = []
+        last_tradeday = self.get_tradedays_last(dt - timedelta(days=1))
+        for d in self._get_certain_tradedays(last_tradeday, _check_next_week):
+            ret.append(d[0])
+            count -= 1
+            if count == 0:
+                break
+        return ret
+
+    @overload
+    def get_tradedays_week_day(self, weekday: int, dt: datetime) -> List[datetime]:
+        """return all trading `weekday` >=`dt`, , weekday in [1, 7]"""
+
+    @overload
+    def get_tradedays_week_day(
+        self, weekday: int, dt: datetime, count: int
+    ) -> List[datetime]:
+        """return n trading `weekday` >=`dt`, weekday in [1, 7]"""
+
+    def get_tradedays_week_day(
+        self, weekday: int, dt: datetime, count: int = 0
+    ) -> List[datetime]:
+        ret = []
+        for day in self.get_tradedays_gte(dt):
+            if _check_week_day(day, weekday):
+                ret.append(day)
+                count -= 1
+                if count == 0:
+                    break
+        return ret
 
     def get_special_sessions(self, dt: datetime):
         """从配置special_sessions中读取，或者重写该函数"""
@@ -439,6 +549,14 @@ class MongoDBCalendar(Calendar):
         """get trade days <= dt"""
         return self._tradedays[: self._tradedays_indexers[dt.date().isoformat()][0] + 1]
 
+    def get_tradedays_next(self, dt: datetime) -> datetime:
+        """equal to get_tradedays_gte(dt)[0]"""
+        return self._tradedays[self._tradedays_indexers[dt.date().isoformat()][1]]
+
+    def get_tradedays_last(self, dt: datetime) -> datetime:
+        """equal to get_tradedays_lte(dt)[-1]"""
+        return self._tradedays[self._tradedays_indexers[dt.date().isoformat()][0]]
+
     def get_tradedays_between(
         self, start_dt: datetime, end_dt: datetime
     ) -> List[datetime]:
@@ -454,6 +572,10 @@ def _check_next_month(day, last_day):
 
 def _check_next_week(day, last_day):
     return day.isocalendar().week != last_day.isocalendar().week
+
+
+def _check_week_day(day, weekday):
+    return weekday == day.isocalendar().weekday
 
 
 def seconds_to_time(seconds):

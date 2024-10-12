@@ -29,7 +29,7 @@ def mongo_client():
     print("disconnect mongodb")
 
 
-def test_calendar_7x24_bartime():
+def test_get_tradedays(mongo_client):
     cal = Time7x24Calendar()
     assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 13)) == [
         datetime(2024, 9, 13)
@@ -39,6 +39,97 @@ def test_calendar_7x24_bartime():
         datetime(2024, 9, 14),
     ]
     assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 12)) == []
+
+    month_ends = [
+        datetime(2024, 1, 31),
+        datetime(2024, 2, 29),
+        datetime(2024, 3, 31),
+    ]
+    month_begins = [
+        datetime(2024, 1, 1),
+        datetime(2024, 2, 1),
+        datetime(2024, 3, 1),
+    ]
+    week_ends = [
+        datetime(2024, 1, 7),
+        datetime(2024, 1, 14),
+        datetime(2024, 1, 21),
+    ]
+    week_begins = [
+        datetime(2024, 1, 1),
+        datetime(2024, 1, 8),
+        datetime(2024, 1, 15),
+    ]
+    week_days = [
+        datetime(2023, 12, 27),
+        datetime(2024, 1, 3),
+        datetime(2024, 1, 10),
+    ]
+    assert cal.get_tradedays_month_end(datetime(2024, 1, 1), 3) == month_ends
+    assert cal.get_tradedays_month_end(datetime(2024, 1, 31), 3) == month_ends
+    assert cal.get_tradedays_month_begin(datetime(2024, 1, 1), 3) == month_begins
+    assert cal.get_tradedays_month_begin(datetime(2023, 12, 31), 3) == month_begins
+    assert cal.get_tradedays_week_end(datetime(2024, 1, 1), 3) == week_ends
+    assert cal.get_tradedays_week_end(datetime(2024, 1, 7), 3) == week_ends
+    assert cal.get_tradedays_week_begin(datetime(2024, 1, 1), 3) == week_begins
+    assert cal.get_tradedays_week_begin(datetime(2023, 12, 26), 3) == week_begins
+    assert cal.get_tradedays_week_day(3, datetime(2023, 12, 27), 3) == week_days
+
+    cal = CalendarAstock(mongo_client)
+    assert cal.get_tradedays_gte(datetime(2023, 6, 30))[0] == datetime(2023, 6, 30)
+    assert cal.get_tradedays_lte(datetime(2024, 9, 17))[-1] == datetime(2024, 9, 13)
+    assert cal.get_tradedays_lte(datetime(2024, 9, 14))[-1] == datetime(2024, 9, 13)
+    assert cal.get_tradedays_lte(datetime(2024, 9, 13))[-1] == datetime(2024, 9, 13)
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 17)) == [
+        datetime(2024, 9, 13)
+    ]
+    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 18)) == [
+        datetime(2024, 9, 13),
+        datetime(2024, 9, 18),
+    ]
+    month_ends = [
+        datetime(2024, 1, 31),
+        datetime(2024, 2, 29),
+        datetime(2024, 3, 29),
+    ]
+    month_begins = [
+        datetime(2024, 1, 2),
+        datetime(2024, 2, 1),
+        datetime(2024, 3, 1),
+    ]
+    week_ends = [
+        datetime(2024, 1, 5),
+        datetime(2024, 1, 12),
+        datetime(2024, 1, 19),
+    ]
+    week_begins = [
+        datetime(2024, 1, 2),
+        datetime(2024, 1, 8),
+        datetime(2024, 1, 15),
+    ]
+    week_days = [
+        datetime(2024, 2, 7),
+        datetime(2024, 2, 21),
+        datetime(2024, 2, 28),
+    ]
+    assert cal.get_tradedays_month_end(datetime(2024, 1, 1), 3) == month_ends
+    assert cal.get_tradedays_month_end(datetime(2024, 1, 31), 3) == month_ends
+    assert cal.get_tradedays_month_begin(datetime(2024, 1, 1), 3) == month_begins
+    assert cal.get_tradedays_month_begin(datetime(2024, 1, 2), 3) == month_begins
+    assert cal.get_tradedays_month_begin(datetime(2023, 12, 31), 3) == month_begins
+    assert cal.get_tradedays_week_end(datetime(2024, 1, 1), 3) == week_ends
+    assert cal.get_tradedays_week_end(datetime(2024, 1, 5), 3) == week_ends
+    assert cal.get_tradedays_week_end(datetime(2024, 1, 7))[0] == datetime(2024, 1, 12)
+    assert cal.get_tradedays_week_begin(datetime(2024, 1, 1), 3) == week_begins
+    assert cal.get_tradedays_week_begin(datetime(2023, 12, 26), 3) == week_begins
+    assert cal.get_tradedays_week_begin(datetime(2024, 6, 11))[0] == datetime(
+        2024, 6, 11
+    )
+    assert cal.get_tradedays_week_day(3, datetime(2024, 2, 7), 3) == week_days
+
+
+def test_calendar_7x24_bartime():
+    cal = Time7x24Calendar()
     bartime_testcases = [
         (datetime(2024, 9, 13), datetime(2024, 9, 13), 60),
         (datetime(2024, 9, 13), datetime(2024, 9, 13), 300),
@@ -96,17 +187,6 @@ def test_calendar_7x24_bartime():
 
 def test_calendar_astock(mongo_client):
     cal = CalendarAstock(mongo_client)
-    assert cal.get_tradedays_gte(datetime(2023, 6, 30))[0] == datetime(2023, 6, 30)
-    assert cal.get_tradedays_lte(datetime(2024, 9, 17))[-1] == datetime(2024, 9, 13)
-    assert cal.get_tradedays_lte(datetime(2024, 9, 14))[-1] == datetime(2024, 9, 13)
-    assert cal.get_tradedays_lte(datetime(2024, 9, 13))[-1] == datetime(2024, 9, 13)
-    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 17)) == [
-        datetime(2024, 9, 13)
-    ]
-    assert cal.get_tradedays_between(datetime(2024, 9, 13), datetime(2024, 9, 18)) == [
-        datetime(2024, 9, 13),
-        datetime(2024, 9, 18),
-    ]
     assert cal.is_trading(datetime(2024, 9, 20, 9, 0)) == False
     assert cal.is_trading(datetime(2024, 9, 20, 9, 30)) == True
     assert cal.is_trading(datetime(2024, 9, 20, 11, 30)) == True
