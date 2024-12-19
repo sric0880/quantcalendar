@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(fmt CONFIG REQUIRED)
 find_package(quantdata REQUIRED)
+find_package(unordered_dense CONFIG REQUIRED)
 
 add_library(quantcalendar STATIC "src/calendar.cpp")
 
@@ -13,7 +14,8 @@ include_directories("include")
 
 target_link_libraries(quantcalendar
   PRIVATE fmt::fmt
-  PRIVATE quantdata::qddatetime)
+  PRIVATE quantdata::qddatetime
+  PRIVATE unordered_dense::unordered_dense)
 
 # For CTest
 enable_testing()
