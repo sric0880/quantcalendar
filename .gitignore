@@ -165,3 +165,4 @@ my_update.*
 out/
 vcpkg_installed/
 .vscode/
+.vs/

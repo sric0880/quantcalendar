@@ -8,12 +8,16 @@
 
 #include "quantcalendar/qmc_globals.h"
 #include "quantdata/datetime.h"
+#include "ankerl/unordered_dense.h"
 
 using std::time_t;
 
 NS_QMC_BEGIN
 
 using datetime = Datetime<>;
+using sec_t = datetime::precision::rep;
+using cr_iter = std::vector<datetime>::const_reverse_iterator;
+using c_iter = std::vector<datetime>::const_iterator;
 
 #define I1H 3600
 #define I2H 7200
@@ -52,14 +56,20 @@ class Calendar
 {
 public:
   // get trade days >= dt
-  virtual const std::vector<time_t> GetTradedaysGTE(time_t dt) const = 0;
+  virtual inline c_iter GetTradedaysGTE(const datetime& dt) const = 0;
+  virtual inline c_iter GetTradedaysGTE(sec_t dt) const = 0;
   // get trade days <= dt
-  virtual const std::vector<time_t> GetTradedaysLTE(time_t dt) const = 0;
+  virtual inline cr_iter GetTradedaysLTE(const datetime& dt) const = 0;
+  virtual inline cr_iter GetTradedaysLTE(sec_t dt) const = 0;
   // equal to GetTradedaysGTE(dt)[0]
-  virtual const time_t GetTradedayNext(time_t dt) const = 0;
+  virtual inline const datetime* GetTradedayNext(const datetime& dt) const = 0;
+  virtual inline const datetime* GetTradedayNext(sec_t dt) const = 0;
   // equal to GetTradedaysLTE(dt)[-1]
-  virtual const time_t GetTradedayLast(time_t dt) const = 0;
-  virtual const std::vector<time_t> GetTradedaysBetween(time_t start_dt, time_t end_dt) const = 0;
+  virtual inline const datetime* GetTradedayLast(const datetime& dt) const = 0;
+  virtual inline const datetime* GetTradedayLast(sec_t dt) const = 0;
+  virtual std::pair<c_iter, c_iter> GetTradedaysBetween(const datetime& start_dt, const datetime& end_dt) const = 0;
+  virtual std::pair<c_iter, c_iter> GetTradedaysBetween(sec_t start_dt, sec_t end_dt) const = 0;
+
   /**
    * 获取K线时间
    * @param
@@ -167,20 +177,24 @@ private:
   void _calc_bartimestamp_right();
 };
 
-typedef typename std::vector<datetime>::const_reverse_iterator cr_iter;
-typedef typename std::vector<datetime>::const_iterator c_iter;
 class DBCalendar : public Calendar
 {
 public:
-  DBCalendar(std::vector<std::pair<datetime, uint8_t>> &&calendar_data);
-  virtual c_iter GetTradedaysGTE(datetime dt) const override;
-  virtual cr_iter GetTradedaysLTE(datetime dt) const override;
-  virtual const datetime &GetTradedayNext(datetime dt) const override;
-  virtual const datetime &GetTradedayLast(datetime dt) const override;
-  virtual std::pair<c_iter, c_iter> GetTradedaysBetween(datetime start_dt, datetime end_dt) const override;
+  DBCalendar(const std::vector<std::pair<sec_t /*timestamp*/, uint8_t /*status*/>> &calendar_data);
+  virtual inline c_iter GetTradedaysGTE(const datetime &dt) const override;
+  virtual inline c_iter GetTradedaysGTE(sec_t dt) const override;
+  virtual inline cr_iter GetTradedaysLTE(const datetime &dt) const override;
+  virtual inline cr_iter GetTradedaysLTE(sec_t dt) const override;
+  virtual inline const datetime *GetTradedayNext(const datetime &dt) const override;
+  virtual inline const datetime *GetTradedayNext(sec_t dt) const override;
+  virtual inline const datetime *GetTradedayLast(const datetime &dt) const override;
+  virtual inline const datetime *GetTradedayLast(sec_t dt) const override;
+  virtual std::pair<c_iter, c_iter> GetTradedaysBetween(const datetime &start_dt, const datetime &end_dt) const override;
+  virtual std::pair<c_iter, c_iter> GetTradedaysBetween(sec_t start_dt, sec_t end_dt) const override;
 
 private:
   std::vector<datetime> tradedays_;
+  ankerl::unordered_dense::map<sec_t, int> tradedays_indexers_;
 };
 
 void SetMongoCalendarDBName(std::string_view dbname);
