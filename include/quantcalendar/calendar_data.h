@@ -14,8 +14,6 @@ using namespace std::literals::chrono_literals;
 using datetime = Datetime<>;
 using calendar_date = IsoCalendarDate;
 using sec_t = datetime::precision::rep;
-using session_t = std::pair<sec_t, sec_t>;
-using time_point = system_clock::time_point;
 
 constexpr seconds operator""_d(unsigned long long __d)
 {
@@ -126,7 +124,7 @@ public:
   class weekday_iterator : public iterator
   {
   public:
-    weekday_iterator(const_map_iterator &&it, const const_map_iterator& end, const const_map_iterator& rend, int weekday) : iterator(std::move(it), end, rend), weekday_(weekday) {}
+    weekday_iterator(const_map_iterator &&it, const const_map_iterator &end, const const_map_iterator &rend, int weekday) : iterator(std::move(it), end, rend), weekday_(weekday) {}
     weekday_iterator &operator++() final override;
     weekday_iterator &operator--() final override;
 
@@ -172,13 +170,13 @@ private:
   const_map_iterator end_;
   const_map_iterator rend_;
 
-  template <typename Iter, typename ... Args>
+  template <typename Iter, typename... Args>
   Iter SafeFind(sec_t dt, Args... args) const
   {
     const_map_iterator inner_it = calendar_data_.find(dt);
     if (inner_it == end_ || inner_it == rend_)
       throw OutOfCalendar();
-    return Iter{ std::move(inner_it), end_, rend_, std::forward<Args>(args)... };
+    return Iter{std::move(inner_it), end_, rend_, std::forward<Args>(args)...};
   }
 };
 

@@ -1,8 +1,8 @@
 #pragma once
 #include <ctime>
 #include <stdexcept>
-#include <regex>
 #include <string>
+#include <vector>
 #include <assert.h>
 #include "fmt/format.h"
 
@@ -12,6 +12,9 @@
 #include "ankerl/unordered_dense.h"
 
 NS_QMC_BEGIN
+
+using session_t = std::pair<sec_t, sec_t>;
+using time_point = system_clock::time_point;
 
 constexpr seconds UnitToDuration(char u)
 {
@@ -73,152 +76,18 @@ public:
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const { return GetData().WeekDayUpper(dt, weekday); }
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const { return GetData().WeekDayLower(dt, weekday); }
   CalendarData::iter_range<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const { return GetData().WeekDayBetween(start, end, weekday); }
-  // get trade days >= dt
-  // virtual c_iter GetTradedaysGTE(sec_t dt) const
-  // {
-  //   return GetData().GetTradedaysGTE(dt);
-  // }
-  // // get trade days <= dt
-  // virtual cr_iter GetTradedaysLTE(sec_t dt) const
-  // {
-  //   return GetData().GetTradedaysLTE(dt);
-  // }
-
-  // const datetime *GetTradedayNext(const datetime &dt) const
-  // {
-  //   return GetTradedayNext(dt.to_timestamp());
-  // }
-  // // equal to GetTradedaysGTE(dt)[0]
-  // virtual const datetime *GetTradedayNext(sec_t dt) const
-  // {
-  //   return GetData().GetTradedayNext(dt);
-  // }
-
-  // // equal to GetTradedaysLTE(dt)[-1]
-  // const datetime *GetTradedayLast(const datetime &dt) const
-  // {
-  //   return GetTradedayLast(dt.to_timestamp());
-  // }
-  // virtual const datetime *GetTradedayLast(sec_t dt) const
-  // {
-  //   return GetData().GetTradedayLast(dt);
-  // }
-
-  // date_range GetTradedaysBetween(const datetime &start_dt, const datetime &end_dt) const
-  // {
-  //   return GetTradedaysBetween(start_dt.to_timestamp(), end_dt.to_timestamp());
-  // }
-  // virtual date_range GetTradedaysBetween(sec_t start_dt, sec_t end_dt) const
-  // {
-  //   return GetData().GetTradedaysBetween(start_dt, end_dt);
-  // }
-  // /**
-  //  * @return
-  //  * all month ends >=`start`
-  //  */
-  // virtual const c_iter GetTradedaysMonthEnd(sec_t start) const
-  // {
-  // }
-  // const c_iter GetTradedaysMonthEnd(const datetime &start) const
-  // {
-  // }
-  // /**
-  //  * @return
-  //  * `count` month ends >=`start`
-  //  */
-  // virtual const date_range GetTradedaysMonthEnd(sec_t start, int count) const;
-  // const date_range GetTradedaysMonthEnd(const datetime &start, int count) const;
-  // /**
-  //  * @return
-  //  * return all `end` >= monthends >=`start`
-  //  */
-  // virtual const date_range GetTradedaysMonthEnd(sec_t start, sec_t end) const;
-  // const date_range GetTradedaysMonthEnd(const datetime &start, const datetime &end) const;
-  // /**
-  //  * @return
-  //  * all month begins >=`start`
-  //  */
-  // virtual const c_iter GetTradedaysMonthBegin(sec_t start) const;
-  // const c_iter GetTradedaysMonthBegin(const datetime &start) const;
-  // /**
-  //  * @return
-  //  * `count` month begins >=`start`
-  //  */
-  // virtual const date_range GetTradedaysMonthBegin(sec_t start, int count) const;
-  // const date_range GetTradedaysMonthBegin(const datetime &start, int count) const;
-  // /**
-  //  * @return
-  //  * return all `end` >= monthbegins >=`start`
-  //  */
-  // virtual const date_range GetTradedaysMonthBegin(sec_t start, sec_t end) const;
-  // const date_range GetTradedaysMonthBegin(const datetime &start, const datetime &end) const;
-  // /**
-  //  * @return
-  //  * all week ends >=`start`
-  //  */
-  // virtual const c_iter GetTradedaysWeekEnd(sec_t start) const;
-  // const c_iter GetTradedaysWeekEnd(const datetime &start) const;
-  // /**
-  //  * @return
-  //  * `count` week ends >=`start`
-  //  */
-  // virtual const date_range GetTradedaysWeekEnd(sec_t start, int count) const;
-  // const date_range GetTradedaysWeekEnd(const datetime &start, int count) const;
-  // /**
-  //  * @return
-  //  * return all `end` >= weekends >=`start`
-  //  */
-  // virtual const date_range GetTradedaysWeekEnd(sec_t start, sec_t end) const;
-  // const date_range GetTradedaysWeekEnd(const datetime &start, const datetime &end) const;
-  // /**
-  //  * @return
-  //  * all week begins >=`start`
-  //  */
-  // virtual const c_iter GetTradedaysWeekBegin(sec_t start) const;
-  // const c_iter GetTradedaysWeekBegin(const datetime &start) const;
-  // /**
-  //  * @return
-  //  * `count` week begins >=`start`
-  //  */
-  // virtual const date_range GetTradedaysWeekBegin(sec_t start, int count) const;
-  // const date_range GetTradedaysWeekBegin(const datetime &start, int count) const;
-  // /**
-  //  * @return
-  //  * return all `end` >= weekbegins >=`start`
-  //  */
-  // virtual const date_range GetTradedaysWeekBegin(sec_t start, sec_t end) const;
-  // const date_range GetTradedaysWeekBegin(const datetime &start, const datetime &end) const;
-  // /**
-  //  * @return
-  //  * return all trading `weekday` >=`start`, , weekday in [1, 7]
-  //  */
-  // virtual const c_iter GetTradedaysWeekDay(sec_t start) const;
-  // const c_iter GetTradedaysWeekDay(const datetime &start) const;
-  // /**
-  //  * @return
-  //  * return `count` trading `weekday` >=`start`, weekday in [1, 7]
-  //  */
-  // virtual const date_range GetTradedaysWeekDay(sec_t start, int count) const;
-  // const date_range GetTradedaysWeekDay(const datetime &start, int count) const;
-  // /**
-  //  * @return
-  //  * return all `end` >= trading `weekday` >=`start`, weekday in [1, 7]
-  //  */
-  // virtual const date_range GetTradedaysWeekDay(sec_t start, sec_t end) const;
-  // const date_range GetTradedaysWeekDay(const datetime &start, const datetime &end) const;
   /**
-   * 获取K线时间
-   * @param
-   *  interval(seconds): K线间隔周期
-   *  start: 开始时间
-   *  end: 结束时间
+   * 获取某段时间内所有的K线时间，含start，不含end
+   * @param interval(seconds): K线间隔周期
+   * @param start: 开始时间
+   * @param end: 结束时间
    */
   std::vector<sec_t> GetBartimes(seconds interval, time_point start, time_point end);
   /**
-   * 获取K线时间
-   * @param
-   *  interval(seconds): K线间隔周期
-   *  count: K线数量
+   * 获取某段时间内所有的K线时间，含start
+   * @param interval(seconds): K线间隔周期
+   * @param start: 开始时间
+   * @param count: K线数量
    */
   std::vector<sec_t> GetBartimes(seconds interval, time_point start, int count);
   /**
@@ -255,48 +124,47 @@ public:
   bool IsTradingTime(time_point dt) const;
 
 protected:
-  Calendar() {};
-  // void CalcBarTimestamp();
-  // void _calc_bartimestamp_left();
-  // void _calc_bartimestamp_right();
+  Calendar(std::vector<session_t> &&sessions,
+           std::vector<seconds> &&intervals,
+           bool bartime_right = true);
 
   // 开盘-收盘时间(包括中间的休息时间), 按当天秒数来算 eg. ((32400, 36900), (37800, 41400), (48600, 54000))
-  std::vector<session_t> sessions_;
+  const std::vector<session_t> sessions_;
   // 特殊原因提前收盘或者延迟开盘
   ankerl::unordered_dense::map<sec_t, SpecialSessions> special_sessions_;
   // 支持的K线周期间隔,单位s,只支持分钟和小时 eg. (60, 300, 600) 表示 1min, 5min, 10min 的K线时间
-  std::array<seconds, 0> intervals_;
+  const std::vector<seconds> intervals_;
   // K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间
   //  @todo:  `left`暂未实现
-  bool bartime_right_ = true;
+  bool bartime_right_;
 
   virtual const CalendarData &GetData() const = 0;
 
 private:
+  ankerl::unordered_dense::map<seconds, std::vector<seconds>> bartimes_;
+
+  void CalcBartimes();
 };
 
 class CalendarAstock : public Calendar
 {
 public:
-  static void InitData(const std::vector<std::tuple<sec_t /*timestamp*/, uint8_t /*status*/>> &calendar_data)
+  static void InitData(const std::vector<std::tuple<sec_t /*timestamp*/, uint8_t /*status*/>> &data)
   {
-    _calendar_data.InitData(calendar_data);
-  }
-  static const CalendarAstock &Get(std::string_view symbol = "")
-  {
-    static CalendarAstock cal;
-    return cal;
+    calendar_data.InitData(data);
   }
 
+  static const CalendarAstock &GetInstance(std::string_view symbol = "") { return cal; }
+
 protected:
-  std::vector<session_t> sessions_{{34200, 41400}, {46800, 54000}};
   const CalendarData &GetData() const override
   {
-    return _calendar_data;
+    return calendar_data;
   }
 
 private:
-  static CalendarData _calendar_data;
+  static CalendarData calendar_data;
+  static CalendarAstock cal;
 };
 
 class CalendarCTP : public Calendar
