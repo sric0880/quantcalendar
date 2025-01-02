@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <tuple>
+#include <bitset>
 #include "quantdata/datetime.h"
 
 #include "quantcalendar/qmc_globals.h"
@@ -59,11 +60,12 @@ class CalendarData
 public:
   using calendar_data_map = ankerl::unordered_dense::map<sec_t, CalendarDataNode>;
   using const_map_iterator = calendar_data_map::value_container_type::const_iterator;
-  template <class T>
   class iterator
   {
   protected:
     const_map_iterator it_;
+    const const_map_iterator &end_;
+    const const_map_iterator &rend_;
 
   public:
     // iterator traits
@@ -72,27 +74,16 @@ public:
     using pointer = const_map_iterator::pointer;
     using reference = const_map_iterator::reference;
     using iterator_category = std::bidirectional_iterator_tag;
-    iterator(const_map_iterator &&it) : it_(std::move(it)) {}
+    iterator(const_map_iterator &&it, const const_map_iterator &end, const const_map_iterator &rend) : it_(std::move(it)), end_(end), rend_(rend) {}
     bool operator==(const iterator &other) const { return it_ == other.it_; }
     bool operator!=(const iterator &other) const { return it_ != other.it_; }
-    virtual T &operator++() = 0;
-    virtual T &operator--() = 0;
-    T operator++(int)
-    {
-      T retval(*this);
-      ++(*this);
-      return retval;
-    }
-    T operator--(int)
-    {
-      T retval(*this);
-      --(*this);
-      return retval;
-    }
+    virtual iterator &operator++() = 0;
+    virtual iterator &operator--() = 0;
     reference operator*() const { return *it_; }
+    bool is_end() const { return (it_ == end_) || (it_ == rend_); }
   };
 
-  class tradedays_iterator : public iterator<tradedays_iterator>
+  class tradedays_iterator : public iterator
   {
   public:
     using iterator::iterator;
@@ -100,7 +91,7 @@ public:
     tradedays_iterator &operator--() final override;
   };
 
-  class month_begin_iterator : public iterator<month_begin_iterator>
+  class month_begin_iterator : public iterator
   {
   public:
     using iterator::iterator;
@@ -108,7 +99,7 @@ public:
     month_begin_iterator &operator--() final override;
   };
 
-  class month_end_iterator : public iterator<month_end_iterator>
+  class month_end_iterator : public iterator
   {
   public:
     using iterator::iterator;
@@ -116,7 +107,7 @@ public:
     month_end_iterator &operator--() final override;
   };
 
-  class week_begin_iterator : public iterator<week_begin_iterator>
+  class week_begin_iterator : public iterator
   {
   public:
     using iterator::iterator;
@@ -124,7 +115,7 @@ public:
     week_begin_iterator &operator--() final override;
   };
 
-  class week_end_iterator : public iterator<week_end_iterator>
+  class week_end_iterator : public iterator
   {
   public:
     using iterator::iterator;
@@ -132,10 +123,10 @@ public:
     week_end_iterator &operator--() final override;
   };
 
-  class weekday_iterator : public iterator<weekday_iterator>
+  class weekday_iterator : public iterator
   {
   public:
-    weekday_iterator(const_map_iterator &&it, int weekday) : iterator(std::move(it)), weekday_(weekday) {}
+    weekday_iterator(const_map_iterator &&it, const const_map_iterator& end, const const_map_iterator& rend, int weekday) : iterator(std::move(it), end, rend), weekday_(weekday) {}
     weekday_iterator &operator++() final override;
     weekday_iterator &operator--() final override;
 
@@ -178,14 +169,16 @@ public:
 private:
   seconds offset_minus_day_;
   calendar_data_map calendar_data_;
+  const_map_iterator end_;
+  const_map_iterator rend_;
 
-  template <class Iter, class... Args>
-  Iter SafeFind(sec_t dt, Args &&...args) const
+  template <typename Iter, typename ... Args>
+  Iter SafeFind(sec_t dt, Args... args) const
   {
-    auto inner_it = calendar_data_.find(dt);
-    if (inner_it == calendar_data_.end())
+    const_map_iterator inner_it = calendar_data_.find(dt);
+    if (inner_it == end_ || inner_it == rend_)
       throw OutOfCalendar();
-    return Iter(std::move(inner_it), std::forward<Args>(args)...);
+    return Iter{ std::move(inner_it), end_, rend_, std::forward<Args>(args)... };
   }
 };
 

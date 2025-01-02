@@ -31,7 +31,23 @@ int main(int argv, char *args[])
   {
   }
   auto iter4 = calendar_data.TradedaysUpper(Datetime(2024, 12, 31).to_timestamp());
-  ++iter4;
+  try
+  {
+    ++iter4;
+    assert(false);
+  }
+  catch (qmc::OutOfCalendar &e)
+  {
+  }
+  auto iter5 = calendar_data.TradedaysLower(Datetime(1990, 12, 19).to_timestamp());
+  try
+  {
+    --iter5;
+    assert(false);
+  }
+  catch (qmc::OutOfCalendar& e)
+  {
+  }
 
   MongoClose();
 }

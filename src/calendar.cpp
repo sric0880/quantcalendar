@@ -55,44 +55,44 @@ NS_QMC_BEGIN
 
 #pragma region Calendar
 
-std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, time_point end)
-{
-}
-
-std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, int count)
-{
-}
-
-inline sec_t Calendar::GetCurrentBartime(time_point dt, seconds interval)
-{
-}
-
-const SpecialSessions &Calendar::GetSpecialSessions(time_point dt) const
-{
-}
-
-const session_t Calendar::GetOpenCloseDT(sec_t dt) const
-{
-}
-
-const session_t Calendar::GetSessionDT(sec_t dt) const
-{
-}
-const void Calendar::GetOrderedSessions() const
-{
-}
-const void Calendar::GetOpenCloseTime() const
-{
-}
-bool Calendar::IsTrading(time_point dt) const
-{
-}
-bool Calendar::IsTradingDay(time_point dt) const
-{
-}
-bool Calendar::IsTradingTime(time_point dt) const
-{
-}
+//std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, time_point end)
+//{
+//}
+//
+//std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, int count)
+//{
+//}
+//
+//inline sec_t Calendar::GetCurrentBartime(time_point dt, seconds interval)
+//{
+//}
+//
+//const SpecialSessions &Calendar::GetSpecialSessions(time_point dt) const
+//{
+//}
+//
+//const session_t Calendar::GetOpenCloseDT(sec_t dt) const
+//{
+//}
+//
+//const session_t Calendar::GetSessionDT(sec_t dt) const
+//{
+//}
+//const void Calendar::GetOrderedSessions() const
+//{
+//}
+//const void Calendar::GetOpenCloseTime() const
+//{
+//}
+//bool Calendar::IsTrading(time_point dt) const
+//{
+//}
+//bool Calendar::IsTradingDay(time_point dt) const
+//{
+//}
+//bool Calendar::IsTradingTime(time_point dt) const
+//{
+//}
 
 #pragma endregion
 

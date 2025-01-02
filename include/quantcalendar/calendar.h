@@ -2,7 +2,6 @@
 #include <ctime>
 #include <stdexcept>
 #include <regex>
-#include <span>
 #include <string>
 #include <assert.h>
 #include "fmt/format.h"
