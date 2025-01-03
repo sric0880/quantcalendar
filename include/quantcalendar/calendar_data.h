@@ -13,21 +13,21 @@ NS_QMC_BEGIN
 using namespace std::literals::chrono_literals;
 using datetime = Datetime<>;
 using calendar_date = IsoCalendarDate;
-using sec_t = datetime::precision::rep;
+using sec_t = seconds::rep;
 
 constexpr seconds operator""_d(unsigned long long __d)
 {
-  return seconds(static_cast<seconds::rep>(__d * 86400));
+  return seconds(static_cast<sec_t>(__d * 86400));
 }
 
 constexpr seconds operator""_w(unsigned long long __d)
 {
-  return seconds(static_cast<seconds::rep>(__d * 7 * 86400));
+  return seconds(static_cast<sec_t>(__d * 7 * 86400));
 }
 
-constexpr seconds operator""_M(unsigned long long __d)
+constexpr seconds operator""_m(unsigned long long __d)
 {
-  return seconds(static_cast<seconds::rep>(__d * 30 * 7 * 86400));
+  return seconds(static_cast<sec_t>(__d * 30 * 7 * 86400));
 }
 
 struct CalendarDataNode

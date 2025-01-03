@@ -1,10 +1,12 @@
-#include <regex>
 #include <string>
+#include <algorithm>
 
 #include "quantcalendar/calendar.h"
-#include "calendar.h"
 
 NS_QMC_BEGIN
+
+constexpr const int iseconds_a_day = 86400;
+constexpr const seconds seconds_a_day(86400);
 
 // void seconds_to_time(int seconds, std::tm &out)
 // {
@@ -55,41 +57,35 @@ NS_QMC_BEGIN
 // }
 
 #pragma region Calendar
-bool check_append_conditions(bt, offset, vector<int> &ret, int count = 0)
+inline bool check_bartime_append_condition(sec_t bt, sec_t end, int offset, std::vector<sec_t> &ret)
 {
-  if (end is not None && bt >= end)
-    return True;
+  if (bt >= end)
+    return true;
   ret.push_back(bt + offset);
-  if (count > 0 && ret.size() >= count)
-    return True;
-  return False;
+  return false;
 }
 
-void _to_offset_dt(dt)
+inline bool check_bartime_append_condition(sec_t bt, int count, int offset, std::vector<sec_t> &ret)
 {
-  auto dt = dt - this->offset auto trading_day = dt;
-  if (dt.time() == time.min and this._bartime_side_right)
-  {
-    trading_day -= day_offset
-  }
-  return {dt, trading_day};
+  ret.push_back(bt + offset);
+  return ret.size() >= count;
 }
 
-auto calc_bartimestamp_left(start, end, const vector<std::pair<time_piont, time_piont>> &jumps, inte)
+auto calc_bartimestamp_left(int session_start, int session_end, std::vector<std::pair<int, int>> &jumps, int inte)
 {
   int jump_idx = 0;
   int jumps_len = jumps.size();
-  vector<int> ret;
-  while (start < end)
+  std::vector<int> ret;
+  while (session_start < session_end)
   {
-    ret.push_back(start);
-    start += inte;
+    ret.push_back(session_start);
+    session_start += inte;
     while (jump_idx < jumps_len)
     {
       auto &[jtime, cumj] = jumps[jump_idx];
-      if (start > jtime)
+      if (session_start > jtime)
       {
-        start += cumj;
+        session_start += cumj;
         jump_idx += 1;
       }
       else
@@ -101,20 +97,20 @@ auto calc_bartimestamp_left(start, end, const vector<std::pair<time_piont, time_
   return ret;
 }
 
-auto calc_bartimestamp_right(start, end, const vector<std::pair<time_piont, time_piont>> &jumps, inte)
+auto calc_bartimestamp_right(int session_start, int session_end, const std::vector<std::pair<int, int>> &jumps, int inte)
 {
   int jump_idx = 0;
   int jumps_len = jumps.size();
-  vector<int> ret;
-  while (start <= end)
+  std::vector<int> ret;
+  while (session_start <= session_end)
   {
-    start += inte;
+    session_start += inte;
     while (jump_idx < jumps_len)
     {
       auto &[jtime, cumj] = jumps[jump_idx];
-      if (start > jtime)
+      if (session_start > jtime)
       {
-        start += cumj;
+        session_start += cumj;
         jump_idx += 1;
       }
       else
@@ -122,11 +118,11 @@ auto calc_bartimestamp_right(start, end, const vector<std::pair<time_piont, time
         break;
       }
     }
-    if (start <= end)
-      ret.push_back(start)
+    if (session_start <= session_end)
+      ret.push_back(session_start);
   }
-  if (ret.empty() or *ret.rend() < end)
-    ret.push_back(end);
+  if (ret.empty() || ret[ret.size() -1] < session_end)
+    ret.push_back(session_end);
   return ret;
 }
 
@@ -134,110 +130,132 @@ Calendar::Calendar(
     std::vector<session_t> &&sessions,
     std::vector<seconds> &&intervals,
     bool bartime_right) : sessions_(std::move(sessions)),
-                          intervals_(std::move(intervals)),
+                          intervals_(intervals.size()),
                           bartime_right_(bartime_right)
 {
+  std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](seconds& sec) {return sec.count();});
+  open_close_sessions_.emplace_back(sessions_[0].first, sessions_[sessions_.size() - 1].second);
+  std::copy(sessions_.begin(), sessions_.end(), sorted_sessions_.begin());
+  std::sort(sorted_sessions_.begin(), sorted_sessions_.end(), [](session_t& x, session_t& y) {return x.first < y.first;});
   CalcBartimes();
+}
+
+std::pair<time_point, time_point> Calendar::ApplyOffset(time_point dt)
+{
+  dt -= GetData().offset_;
+  auto trading_day = dt;
+  // 凌晨时刻判断交易日属于前一天还是后一天
+  if (is_daily(dt) && bartime_right_)
+    trading_day -= seconds_a_day;
+  return { dt, trading_day };
 }
 
 void Calendar::CalcBartimes()
 {
-  auto &[start, end] = sessions_[0];
-  vector<std::pair<time_piont, time_piont>> jumps;
-  last_eos = None;
+  auto start = sessions_[0].first;
+  auto end = sessions_[sessions_.size() - 1].second;
+  std::vector<std::pair<int, int>> jumps;
+  int next_sos;
+  int last_eos = -1;
   for (auto &[sos, eos] : sessions_)
   {
+    next_sos = sos;
     if (sos < start)
-      sos += 86400;
-    if (eos < start)
-      eos += 86400;
-    if (last_eos is not None)
-      jumps.append((last_eos, sos - last_eos));
+      next_sos += iseconds_a_day;
+    if (last_eos != -1)
+      jumps.emplace_back(last_eos, next_sos - last_eos);
     last_eos = eos;
+    if (eos < start)
+      last_eos += iseconds_a_day;
   }
-  if (end < start)
-    end += 86400;
-  ret = {};
+  if (end < start) // 跨越0点
+    end += iseconds_a_day;
   if (bartime_right_)
   {
     for (auto inte : intervals_)
-      ret[inte] = calc_bartimestamp_right(start, end, jumps, inte);
+      bartimes_.emplace(inte, calc_bartimestamp_right(start, end, jumps, inte));
   }
   else
   {
     for (auto inte : intervals_)
-      ret[inte] = calc_bartimestamp_left(start, end, jumps, inte);
+      bartimes_.emplace(inte, calc_bartimestamp_left(start, end, jumps, inte));
   }
-  return ret;
 }
 
 std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, time_point end)
 {
 }
 
+void Calendar::GetDailyBartimes(CalendarData::iterator&& it, int count, int offset, std::vector<sec_t>& ret)
+{
+  auto close_t = open_close_sessions_[0].second;
+  auto ddt = dt.time_since_epoch();
+  do
+  {
+    sec_t bt = (*it).first;
+    ++it;
+    bt = CombineDatetime(bt, close_t);
+    if (ddt <= seconds(bt))
+    {
+      if (check_bartime_append_condition(bt, count, offset, ret))
+        return;
+    }
+  } while (!it.is_end());
+}
+
 std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, int count)
 {
-  vector<time_point> ret;
-  times = self._bartimestamp.get(interval, None);
-  auto &&[dt, start_day] = self._to_offset_dt(start);
-  if (times is None)
+  int offset = GetData().offset_.count();
+  int inte = interval.count();
+  auto &&[dt, start_day] = ApplyOffset(start);
+  std::vector<sec_t> ret;
+  if (!bartimes_.contains(inte))
   {
-    if (interval == DAILY)
+    if (interval == 1_d)
     {
-      for (auto &day : self.get_tradedays_gte(start_day))
-      {
-        auto close_time = self._combine_date_time(
-            day, self._open_close_sessions[0][-1]);
-        if (dt <= close_time)
-        {
-          if (check_append_conditions(close_time))
-            return ret;
-        }
-      }
+      GetDailyBartimes(TradedaysUpper(to_daily(start_day)), count, offset, ret);
     }
-    else if (interval == WEEKLY)
+    else if (interval == 1_w)
     {
-      for (auto close_time : self._get_bartimes(dt, start_day, _check_next_week))
-      {
-        if (check_append_conditions(close_time))
-          return ret;
-      }
+      GetDailyBartimes(WeekEndUpper(to_daily(start_day)), count, offset, ret);
     }
-    else if (interval == MONTHLY)
+    else if (interval == 1_m)
     {
-      for (auto &close_time : self._get_bartimes(dt, start_day, _check_next_month))
-      {
-        if (check_append_conditions(close_time))
-          return ret;
-      }
+      GetDailyBartimes(MonthEndUpper(to_daily(start_day)), count, offset, ret);
     }
     else
     {
-      throw ValueError(f "bartime {interval} not supported");
+      throw InvalidArgumentInterval(inte);
     }
   }
   else
   {
-    for (auto &day : self.get_tradedays_gte(start_day))
+    auto &times = bartimes_[inte];
+    auto it = TradedaysUpper(to_daily(start_day));
+    auto ddt = dt.time_since_epoch();
+    do
     {
-      auto &sessions = self._get_sessions_with_breaks(day);
-      bts = list(map(lambda x : self._combine_date_time(day, x), times));
-      for (auto &[sos, eos] : sessions)
+      sec_t bt = (*it).first;
+      ++it;
+      auto &sessions = GetSessionsWithBreaks(bt);
+      std::vector<sec_t> bts;
+      std::transform(times.begin(), times.end(), bts.begin(), [](int& x) {return CombineDatetime(bt, x); });
+      for (auto& [sos, eos] : sessions)
       {
-        eos = self._combine_date_time(day, eos);
-        if (dt > eos)
+        eos = CombineDatetime(bt, eos);
+        if (ddt > seconds(eos))
           continue;
-        sos = self._combine_date_time_sos(day, sos);
-        for (auto &bt in bts)
+        sos = CombineDatetimeSos(bt, sos);
+        for (auto& bt in bts)
         {
-          if (bt >= dt && bt <= eos && bt >= sos)
+          if (seconds(bt) >= ddt && bt <= eos && bt >= sos)
           {
-            if (check_append_conditions(bt))
+            if (check_bartime_append_condition(bt, count, offset, ret))
               return ret;
           }
         }
       }
-    }
+    } while (!it.is_end());
   }
   if (ret.empty())
   {
@@ -283,6 +301,30 @@ bool Calendar::IsTradingDay(time_point dt) const
 }
 bool Calendar::IsTradingTime(time_point dt) const
 {
+}
+
+const std::optional<SpecialSessions> Calendar::GetSpecialSessions(sec_t dt)
+{
+  return special_sessions_.find(dt);
+}
+
+std::vector<session_t>& Calendar::GetSessionsWithBreaks(sec_t dt)
+{
+  auto s = GetSpecialSessions(dt);
+  return s.
+if s is not None :
+  return s.ordered_sessions
+else :
+  return sorted_sessions_
+}
+
+sec_t Calendar::CombineDatetime(sec_t tradingday, sec_t time)
+{
+
+}
+sec_t Calendar::CombineDatetimeSos(sec_t tradingday, sec_t time)
+{
+
 }
 
 #pragma endregion

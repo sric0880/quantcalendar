@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <assert.h>
+#include <ratio>
+#include <optional>
 #include "fmt/format.h"
 
 #include "quantcalendar/qmc_globals.h"
@@ -15,6 +17,7 @@ NS_QMC_BEGIN
 
 using session_t = std::pair<sec_t, sec_t>;
 using time_point = system_clock::time_point;
+using days = duration<int, std::ratio_multiply<std::ratio<24>, hours::period>>;
 
 constexpr seconds UnitToDuration(char u)
 {
@@ -31,7 +34,7 @@ constexpr seconds UnitToDuration(char u)
   case 'w':
     return 1_w;
   case 'M':
-    return 1_M;
+    return 1_m;
   default:
     throw std::invalid_argument(fmt::format("interval unit {} is not invalid", u));
   }
@@ -44,6 +47,21 @@ struct SpecialSessions
   session_t open_close_sessions;
   session_t ordered_sessions;
 };
+
+inline bool is_daily(const time_point &tp)
+{
+  return (tp - time_point_cast<days>(tp)) == time_point::duration::zero();
+}
+
+inline sec_t to_daily(const time_point &tp)
+{
+  return duration_cast<seconds>(time_point_cast<days>(tp).time_since_epoch()).count();
+}
+
+inline sec_t to_daily(const datetime& dt)
+{
+  return duration_cast<seconds>(duration_cast<days>(dt.to_duration())).count();
+}
 
 /**
  * 交易日历
@@ -92,8 +110,8 @@ public:
   std::vector<sec_t> GetBartimes(seconds interval, time_point start, int count);
   /**
    * 获取K线时间
-   * @param
-   *  interval(seconds): K线间隔周期
+   * @param dt: 当前时间
+   * @param interval(seconds): K线间隔周期
    */
   inline sec_t GetCurrentBartime(time_point dt, seconds interval);
 
@@ -124,26 +142,41 @@ public:
   bool IsTradingTime(time_point dt) const;
 
 protected:
+  /// @brief 
+  /// @param sessions 开盘-收盘时间(包括中间的休息时间), 按当天秒数来算 eg. ((32400, 36900), (37800, 41400), (48600, 54000))
+  /// @param intervals 支持的K线周期间隔,单位s,只支持分钟和小时 eg. 1min, 5min, 10min 1h 2h...
+  /// @param bartime_right K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间 @todo:  `left`暂未实现
   Calendar(std::vector<session_t> &&sessions,
            std::vector<seconds> &&intervals,
            bool bartime_right = true);
 
-  // 开盘-收盘时间(包括中间的休息时间), 按当天秒数来算 eg. ((32400, 36900), (37800, 41400), (48600, 54000))
-  const std::vector<session_t> sessions_;
-  // 特殊原因提前收盘或者延迟开盘
-  ankerl::unordered_dense::map<sec_t, SpecialSessions> special_sessions_;
-  // 支持的K线周期间隔,单位s,只支持分钟和小时 eg. (60, 300, 600) 表示 1min, 5min, 10min 的K线时间
-  const std::vector<seconds> intervals_;
-  // K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间
-  //  @todo:  `left`暂未实现
-  bool bartime_right_;
 
   virtual const CalendarData &GetData() const = 0;
+  // 从配置special_sessions中读取，或者重写该函数
+  virtual const std::optional<SpecialSessions> GetSpecialSessions(sec_t dt);
 
 private:
-  ankerl::unordered_dense::map<seconds, std::vector<seconds>> bartimes_;
+  bool bartime_right_;
+
+  const std::vector<int> intervals_;
+
+  ankerl::unordered_dense::map<int, std::vector<int>> bartimes_;
+
+  const std::vector<session_t> sessions_;
+  const std::vector<session_t> sorted_sessions_;
+
+  // 本来一天只有一次开盘收盘时间，但是为了兼容特殊日子，开收盘时间依然用vector表示
+  std::vector<session_t> open_close_sessions_;
+
+  // 特殊原因提前收盘或者延迟开盘
+  ankerl::unordered_dense::map<sec_t, SpecialSessions> special_sessions_;
 
   void CalcBartimes();
+  void GetDailyBartimes(CalendarData::iterator&& it, int count, int offset, std::vector<sec_t>& ret);
+  std::pair<time_point, time_point> ApplyOffset(time_point dt);
+  std::vector<session_t>& GetSessionsWithBreaks(sec_t dt);
+  sec_t CombineDatetime(sec_t tradingday, sec_t time);
+  sec_t CombineDatetimeSos(sec_t tradingday, sec_t time);
 };
 
 class CalendarAstock : public Calendar

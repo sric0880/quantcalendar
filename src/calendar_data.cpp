@@ -8,8 +8,8 @@ CalendarData::tradedays_iterator &CalendarData::tradedays_iterator::operator++()
 {
   do
   {
-    if ((++it_) == end_)
-      throw OutOfCalendar();
+    if (it_ == end_ || (++it_) == end_)
+      break;
   } while (!it_->second.IsTrading());
   return *this;
 }
@@ -18,8 +18,8 @@ CalendarData::tradedays_iterator &CalendarData::tradedays_iterator::operator--()
 {
   do
   {
-    if ((--it_) == rend_)
-      throw OutOfCalendar();
+    if (it_ == rend_ || (--it_) == rend_)
+      break;
   } while (!it_->second.IsTrading());
   return *this;
 }
@@ -28,8 +28,8 @@ CalendarData::month_begin_iterator &CalendarData::month_begin_iterator::operator
 {
   do
   {
-    if ((++it_) == end_)
-      throw OutOfCalendar();
+    if (it_ == end_ || (++it_) == end_)
+      break;
   } while (!it_->second.IsMonthBegin());
   return *this;
 }
@@ -38,8 +38,8 @@ CalendarData::month_begin_iterator &CalendarData::month_begin_iterator::operator
 {
   do
   {
-    if ((--it_) == rend_)
-      throw OutOfCalendar();
+    if (it_ == rend_ || (--it_) == rend_)
+      break;
   } while (!it_->second.IsMonthBegin());
   return *this;
 }
@@ -48,8 +48,8 @@ CalendarData::month_end_iterator &CalendarData::month_end_iterator::operator++()
 {
   do
   {
-    if ((++it_) == end_)
-      throw OutOfCalendar();
+    if (it_ == end_ || (++it_) == end_)
+      break;
   } while (!it_->second.IsMonthEnd());
   return *this;
 }
@@ -58,8 +58,8 @@ CalendarData::month_end_iterator &CalendarData::month_end_iterator::operator--()
 {
   do
   {
-    if ((--it_) == rend_)
-      throw OutOfCalendar();
+    if (it_ == rend_ || (--it_) == rend_)
+      break;
   } while (!it_->second.IsMonthEnd());
   return *this;
 }
@@ -68,8 +68,8 @@ CalendarData::week_begin_iterator &CalendarData::week_begin_iterator::operator++
 {
   do
   {
-    if ((++it_) == end_)
-      throw OutOfCalendar();
+    if (it_ == end_ || (++it_) == end_)
+      break;
   } while (!it_->second.IsWeekBegin());
   return *this;
 }
@@ -78,8 +78,8 @@ CalendarData::week_begin_iterator &CalendarData::week_begin_iterator::operator--
 {
   do
   {
-    if ((--it_) == rend_)
-      throw OutOfCalendar();
+    if (it_ == rend_ || (--it_) == rend_)
+      break;
   } while (!it_->second.IsWeekBegin());
   return *this;
 }
@@ -88,8 +88,8 @@ CalendarData::week_end_iterator &CalendarData::week_end_iterator::operator++()
 {
   do
   {
-    if ((++it_) == end_)
-      throw OutOfCalendar();
+    if (it_ == end_ || (++it_) == end_)
+      break;
   } while (!it_->second.IsWeekEnd());
   return *this;
 }
@@ -98,8 +98,8 @@ CalendarData::week_end_iterator &CalendarData::week_end_iterator::operator--()
 {
   do
   {
-    if ((--it_) == rend_)
-      throw OutOfCalendar();
+    if (it_ == rend_ || (--it_) == rend_)
+      break;
   } while (!it_->second.IsWeekEnd());
   return *this;
 }
@@ -108,8 +108,8 @@ CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator++()
 {
   do
   {
-    if ((++it_) == end_)
-      throw OutOfCalendar();
+    if (it_ == end_ || (++it_) == end_)
+      break;
   } while (!it_->second.IsWeekDay(weekday_));
   return *this;
 }
@@ -118,8 +118,8 @@ CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator--()
 {
   do
   {
-    if ((--it_) == rend_)
-      throw OutOfCalendar();
+    if (it_ == rend_ || (--it_) == rend_)
+      break;
   } while (!it_->second.IsWeekDay(weekday_));
   return *this;
 }
