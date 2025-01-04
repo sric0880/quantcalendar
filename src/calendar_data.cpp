@@ -279,4 +279,8 @@ inline CalendarData::iter_range<CalendarData::weekday_iterator> CalendarData::We
   return CalendarData::iter_range<CalendarData::weekday_iterator>{WeekDayUpper(start, weekday), WeekDayUpper(end, weekday)};
 }
 
+inline const CalendarDataNode &CalendarData::At(sec_t dt) const
+{
+  return calendar_data_.at(dt);
+}
 NS_QMC_END

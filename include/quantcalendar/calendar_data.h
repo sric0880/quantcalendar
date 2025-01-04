@@ -15,19 +15,22 @@ using datetime = Datetime<>;
 using calendar_date = IsoCalendarDate;
 using sec_t = seconds::rep;
 
+constexpr const int iseconds_a_day = 86400;
+constexpr const seconds seconds_a_day(86400);
+
 constexpr seconds operator""_d(unsigned long long __d)
 {
-  return seconds(static_cast<sec_t>(__d * 86400));
+  return seconds(static_cast<sec_t>(__d * iseconds_a_day));
 }
 
 constexpr seconds operator""_w(unsigned long long __d)
 {
-  return seconds(static_cast<sec_t>(__d * 7 * 86400));
+  return seconds(static_cast<sec_t>(__d * 7 * iseconds_a_day));
 }
 
 constexpr seconds operator""_m(unsigned long long __d)
 {
-  return seconds(static_cast<sec_t>(__d * 30 * 7 * 86400));
+  return seconds(static_cast<sec_t>(__d * 30 * 7 * iseconds_a_day));
 }
 
 struct CalendarDataNode
@@ -135,15 +138,6 @@ public:
   template <class Iter>
   using iter_range = std::pair<Iter, Iter>;
 
-public:
-  // 时区
-  std::string tz_;
-  // 有些市场交易时间会跨越凌晨0点, offset表示超过0点的时间差, 越过0点表示下一个交易日
-  seconds offset_;
-  CalendarData(std::string_view tz, seconds offset = seconds::zero()) : tz_(tz), offset_(offset)
-  {
-    offset_minus_day_ = offset_ - 1_d;
-  }
   void InitData(const std::vector<std::tuple<sec_t /*timestamp*/, uint8_t /*status*/>> &calendar_data);
   tradedays_iterator TradedaysUpper(sec_t dt) const;
   tradedays_iterator TradedaysLower(sec_t dt) const;
@@ -163,9 +157,9 @@ public:
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const;
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const;
   iter_range<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const;
+  const CalendarDataNode &At(sec_t dt) const;
 
 private:
-  seconds offset_minus_day_;
   calendar_data_map calendar_data_;
   const_map_iterator end_;
   const_map_iterator rend_;

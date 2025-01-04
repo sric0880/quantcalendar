@@ -10,7 +10,7 @@ const char *host = "localhost";
 
 int main(int argv, char *args[])
 {
-  qmc::CalendarData calendar_data("Asia/Shanghai");
+  qmc::CalendarData calendar_data;
   MongoConnect(host);
   auto cursor = MongoGetTradeCal("quantcalendar", "cn_stock");
   auto results = MongoFetchArrays<qmc::sec_t, uint8_t>(std::move(cursor), [](const document::view &view)
@@ -31,23 +31,11 @@ int main(int argv, char *args[])
   {
   }
   auto iter4 = calendar_data.TradedaysUpper(Datetime(2024, 12, 31).to_timestamp());
-  try
-  {
-    ++iter4;
-    assert(false);
-  }
-  catch (qmc::OutOfCalendar &e)
-  {
-  }
-  auto iter5 = calendar_data.TradedaysLower(Datetime(1990, 12, 19).to_timestamp());
-  try
-  {
-    --iter5;
-    assert(false);
-  }
-  catch (qmc::OutOfCalendar& e)
-  {
-  }
+  ++iter4;
+  assert(iter4.is_end());
 
+  auto iter5 = calendar_data.TradedaysLower(Datetime(1990, 12, 19).to_timestamp());
+  --iter5;
+  assert(iter5.is_end());
   MongoClose();
 }
