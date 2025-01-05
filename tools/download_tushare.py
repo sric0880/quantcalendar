@@ -1,6 +1,6 @@
 import pandas as pd
 
-from quantcalendar import calendar_astock
+from quantcalendar_deprecated import calendar_astock
 
 
 def download(token: str):

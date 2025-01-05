@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 from chinese_calendar import get_holiday_detail
 
-from quantcalendar import calendar_ctp
+from quantcalendar_deprecated import calendar_ctp
 
 
 def download(tq_username, tq_psw, end_dt):

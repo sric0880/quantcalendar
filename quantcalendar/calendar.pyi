@@ -1,87 +1,83 @@
-# cython: language_level=3
-# distutils: language = c++
-# distutils: sources = src/calendar.cpp src/calendar_data.cpp
 from datetime import datetime
 
-from .calendar cimport Calendar
-# from .calendar cimport CalendarCTP
-from .calendar cimport CalendarAstock
-# from .calendar cimport Time7x24Calendar
-
-cdef class PyCalendar:
-    cdef const Calendar* c_cal
-
+class PyCalendar:
     def get(self, symbol: str = None):
-        pass
+        """"""
 
     def get_tradedays_gte(self, dt: datetime):
         """get trade days >= dt"""
-        pass
 
     def get_tradedays_lte(self, dt: datetime):
         """get trade days <= dt"""
-        pass
 
     def get_tradedays_next(self, dt: datetime):
         """equal to get_tradedays_gte(dt)[0]"""
-        pass
 
     def get_tradedays_last(self, dt: datetime):
         """equal to get_tradedays_lte(dt)[-1]"""
-        pass
 
-    def get_tradedays_between(self, start_dt: datetime, end_dt: datetime
-    ):
+    def get_tradedays_between(self, start_dt: datetime, end_dt: datetime):
         """get start_dt <= trade days <= end_dt"""
-        pass
 
     def get_current_bartime(self, dt: datetime, interval: int):
-        pass
+        """"""
 
-    def get_bartimes(self, interval: int, start: datetime, end: datetime = None, count=0):
-        pass
+    def get_bartimes(
+        self, interval: int, start: datetime, end: datetime = None, count=0
+    ):
+        """"""
 
-    def get_tradedays_month_end(self, start: datetime, end: datetime = None, count: int = 0):
-        pass
+    def get_tradedays_month_end(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ):
+        """"""
 
-    def get_tradedays_month_begin(self, start: datetime, end: datetime = None, count: int = 0):
-        pass
+    def get_tradedays_month_begin(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ):
+        """"""
 
-    def get_tradedays_week_end(self, start: datetime, end: datetime = None, count: int = 0):
-        pass
+    def get_tradedays_week_end(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ):
+        """"""
 
-    def get_tradedays_week_begin(self, start: datetime, end: datetime = None, count: int = 0):
-        pass
+    def get_tradedays_week_begin(
+        self, start: datetime, end: datetime = None, count: int = 0
+    ):
+        """"""
 
-    def get_tradedays_week_day(self, weekday: int, start: datetime, end: datetime = None, count: int = 0):
-        pass
+    def get_tradedays_week_day(
+        self, weekday: int, start: datetime, end: datetime = None, count: int = 0
+    ):
+        """"""
 
     def get_special_sessions(self, dt: datetime):
-        pass
+        """"""
 
     def get_open_close_dt(self, dt: datetime):
-        pass
+        """"""
 
     def get_session_dt(self, dt: datetime):
-        pass
+        """"""
 
     def get_sessions(self):
-        pass
+        """"""
 
     def get_ordered_sessions(self):
-        pass
+        """"""
 
     def get_open_close_time(self):
-        pass
+        """"""
 
     def is_trading(self, dt: datetime):
-        pass
+        """"""
 
     def is_trading_day(self, dt: datetime):
-        pass
+        """"""
 
     def is_trading_time(self, dt: datetime):
-        pass
+        """"""
 
 # cdef class CalendarCTP(PyCalendar):
 #     def __cinit__(self):
@@ -96,13 +92,10 @@ cdef class PyCalendar:
 #     def __dealloc__(self):
 #         del self.c_cal
 
-cdef class PyCalendarAstock(PyCalendar):
-    def __cinit__(self):
-        self.c_cal = &CalendarAstock.GetInstance(b"")
-
+class PyCalendarAstock(PyCalendar):
     @staticmethod
     def InitData(data):
-        CalendarAstock.InitData(data)
+        """"""
 
 # cdef class Time7x24Calendar(Calendar):
 #     def __cinit__(self):

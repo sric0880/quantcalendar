@@ -13,8 +13,8 @@ int main(int argv, char *args[])
   qmc::CalendarData calendar_data;
   MongoConnect(host);
   auto cursor = MongoGetTradeCal("quantcalendar", "cn_stock");
-  auto results = MongoFetchArrays<qmc::sec_t, uint8_t>(std::move(cursor), [](const document::view &view)
-                                                       { return std::tuple{duration_cast<seconds>(view["_id"].get_date().value).count(), static_cast<uint8_t>(view["status"].get_int32().value)}; });
+  auto results = MongoFetchArrays<qmc::sec_t, char>(std::move(cursor), [](const document::view &view)
+                                                    { return std::tuple{duration_cast<seconds>(view["_id"].get_date().value).count(), static_cast<char>(view["status"].get_int32().value)}; });
   calendar_data.InitData(results);
   auto iter = calendar_data.TradedaysUpper(Datetime(2023, 6, 30).to_timestamp());
   auto iter2 = calendar_data.TradedaysLower(Datetime(2023, 6, 30).to_timestamp());

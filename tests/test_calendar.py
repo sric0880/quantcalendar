@@ -6,10 +6,10 @@ import pandas as pd
 import pytest
 import quantdata as qd
 
-from quantcalendar.calendar_astock import CalendarAstock
-from quantcalendar.calendar_ctp import CalendarCTP
-from quantcalendar.calendar_7x24 import Time7x24Calendar
-from quantcalendar.calendar import (
+from quantcalendar_deprecated.calendar_astock import CalendarAstock
+from quantcalendar_deprecated.calendar_ctp import CalendarCTP
+from quantcalendar_deprecated.calendar_7x24 import Time7x24Calendar
+from quantcalendar_deprecated.calendar import (
     I1H,
     I2H,
     I3H,

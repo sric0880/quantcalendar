@@ -1,12 +1,8 @@
 #pragma once
 #include <ctime>
-#include <stdexcept>
 #include <string>
 #include <vector>
-#include <assert.h>
 #include <ratio>
-#include <optional>
-#include "fmt/format.h"
 
 #include "quantcalendar/qmc_globals.h"
 #include "quantdata/datetime.h"
@@ -19,26 +15,26 @@ using session_t = std::pair<sec_t, sec_t>;
 using time_point = system_clock::time_point;
 using days = duration<int, std::ratio_multiply<std::ratio<24>, hours::period>>;
 
-constexpr seconds UnitToDuration(char u)
-{
-  switch (u)
-  {
-  case 's':
-    return 1s;
-  case 'm':
-    return 1min;
-  case 'h':
-    return 1h;
-  case 'd':
-    return 1_d;
-  case 'w':
-    return 1_w;
-  case 'M':
-    return 1_m;
-  default:
-    throw std::invalid_argument(fmt::format("interval unit {} is not invalid", u));
-  }
-}
+// constexpr seconds UnitToDuration(char u)
+// {
+//   switch (u)
+//   {
+//   case 's':
+//     return 1s;
+//   case 'm':
+//     return 1min;
+//   case 'h':
+//     return 1h;
+//   case 'd':
+//     return 1_d;
+//   case 'w':
+//     return 1_w;
+//   case 'M':
+//     return 1_m;
+//   default:
+//     throw std::invalid_argument(fmt::format("interval unit {} is not invalid", u));
+//   }
+// }
 
 // 特殊原因提前收盘或者延迟开盘
 struct SpecialSessions
@@ -74,7 +70,10 @@ inline sec_t to_daily(const datetime &dt)
 class Calendar
 {
 public:
-  virtual ~Calendar() {}
+  Calendar(const Calendar &) = delete;
+  Calendar &operator=(const Calendar &) = delete;
+  Calendar(Calendar &&rhs) = delete;
+  Calendar &operator=(Calendar &&rhs) = delete;
   using tradedays_iterator = CalendarData::tradedays_iterator;
   using month_begin_iterator = CalendarData::month_begin_iterator;
   using month_end_iterator = CalendarData::month_end_iterator;
@@ -113,7 +112,7 @@ public:
    * @param start: 开始时间
    * @param count: K线数量
    */
-  std::vector<sec_t> GetBartimes(seconds interval, time_point start, int count) const;
+  std::vector<sec_t> GetBartimes(seconds interval, time_point start, size_t count) const;
   /**
    * 获取K线时间
    * @param dt: 当前时间
@@ -158,15 +157,14 @@ protected:
            bool bartime_right = true);
 
 private:
+  const CalendarData &data_;
+  const std::vector<session_t> sessions_;
+  std::vector<int> intervals_;
   std::string tz_;
   sec_t offset_;
+  bool bartime_right_;
   sec_t offset_minus_day_;
 
-  std::vector<int> intervals_;
-
-  ankerl::unordered_dense::map<int, std::vector<int>> bartimes_;
-
-  const std::vector<session_t> sessions_;
   std::vector<session_t> sorted_sessions_;
 
   // 本来一天只有一次开盘收盘时间，但是为了兼容特殊日子，开收盘时间依然用vector表示
@@ -174,15 +172,12 @@ private:
 
   // 特殊原因提前收盘或者延迟开盘
   ankerl::unordered_dense::map<sec_t, SpecialSessions> special_sessions_;
-
-  bool bartime_right_;
-
-  const CalendarData &data_;
+  ankerl::unordered_dense::map<int, std::vector<int>> bartimes_;
 
   void CalcBartimes();
-  std::vector<sec_t> GetBartimesImpl(seconds interval, time_point start, int count, time_point end) const;
-  void GenerateDailyBartimes(CalendarData::iterator &&it, time_point start_dt, int count, time_point end, std::vector<sec_t> &ret) const;
-  void GenerateMinuteBartimes(CalendarData::iterator &&it, int interval, time_point start_dt, int count, time_point end, std::vector<sec_t> &ret) const;
+  std::vector<sec_t> GetBartimesImpl(seconds interval, time_point start, size_t count, time_point end) const;
+  void GenerateDailyBartimes(CalendarData::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
+  void GenerateMinuteBartimes(CalendarData::iterator &&it, int interval, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
   std::pair<time_point, time_point> ApplyOffset(time_point dt) const;
   const std::vector<session_t> &GetSessionsWithBreaks(sec_t dt) const;
   const std::vector<session_t> &GetSessionsWithoutBreaks(sec_t dt) const;
@@ -195,12 +190,12 @@ private:
 class CalendarAstock : public Calendar
 {
 public:
-  static void InitData(const std::vector<std::tuple<sec_t /*timestamp*/, uint8_t /*status*/>> &data)
+  static void InitData(const std::vector<calendar_item> &data)
   {
     calendar_data.InitData(data);
   }
 
-  static const CalendarAstock &GetInstance(std::string_view symbol = "");
+  static const CalendarAstock &GetInstance(std::string symbol = "");
 
 private:
   using Calendar::Calendar;

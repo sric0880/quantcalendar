@@ -14,6 +14,7 @@ using namespace std::literals::chrono_literals;
 using datetime = Datetime<>;
 using calendar_date = IsoCalendarDate;
 using sec_t = seconds::rep;
+using calendar_item = std::tuple<sec_t /*timestamp*/, char /*status*/>;
 
 constexpr const int iseconds_a_day = 86400;
 constexpr const seconds seconds_a_day(86400);
@@ -39,10 +40,10 @@ struct CalendarDataNode
   {
     SetTrading(status == 1);
   }
-  uint8_t status_;
-  mutable std::bitset<8> state_;
   datetime dt_;
   calendar_date cdate_;
+  uint8_t status_;
+  mutable std::bitset<8> state_;
   bool IsTrading() const { return state_[0]; };
   bool IsMonthBegin() const { return state_[1]; };
   bool IsMonthEnd() const { return state_[2]; };
@@ -138,7 +139,7 @@ public:
   template <class Iter>
   using iter_range = std::pair<Iter, Iter>;
 
-  void InitData(const std::vector<std::tuple<sec_t /*timestamp*/, uint8_t /*status*/>> &calendar_data);
+  void InitData(const std::vector<calendar_item> &calendar_data);
   tradedays_iterator TradedaysUpper(sec_t dt) const;
   tradedays_iterator TradedaysLower(sec_t dt) const;
   iter_range<tradedays_iterator> TradedaysBetween(sec_t start, sec_t end) const;

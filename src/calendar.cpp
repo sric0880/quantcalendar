@@ -131,12 +131,12 @@ inline std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point sta
   return GetBartimesImpl(interval, start, 0, end);
 }
 
-inline std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, int count) const
+inline std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, size_t count) const
 {
   return GetBartimesImpl(interval, start, count, time_point::min());
 }
 
-void Calendar::GenerateDailyBartimes(CalendarData::iterator &&it, time_point start_dt, int count, time_point end, std::vector<sec_t> &ret) const
+void Calendar::GenerateDailyBartimes(CalendarData::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const
 {
   auto close_t = open_close_sessions_[0].second;
   do
@@ -164,7 +164,7 @@ void Calendar::GenerateDailyBartimes(CalendarData::iterator &&it, time_point sta
   } while (!it.is_end());
 }
 
-void Calendar::GenerateMinuteBartimes(CalendarData::iterator &&it, int interval, time_point start_dt, int count, time_point end, std::vector<sec_t> &ret) const
+void Calendar::GenerateMinuteBartimes(CalendarData::iterator &&it, int interval, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const
 {
   auto &times = bartimes_.at(interval);
   do
@@ -207,7 +207,7 @@ void Calendar::GenerateMinuteBartimes(CalendarData::iterator &&it, int interval,
   } while (!it.is_end());
 }
 
-std::vector<sec_t> Calendar::GetBartimesImpl(seconds interval, time_point start, int count, time_point end) const
+std::vector<sec_t> Calendar::GetBartimesImpl(seconds interval, time_point start, size_t count, time_point end) const
 {
   // @TODO: end 没有apply offset
   int inte = interval.count();
@@ -298,8 +298,8 @@ bool Calendar::IsTrading(time_point dt) const
 
 bool Calendar::IsTradingDay(time_point dt) const
 {
-  auto &&[start_dt, start_day] = ApplyOffset(dt);
-  auto &node = data_.At(to_daily(dt));
+  auto start_day = ApplyOffset(dt).second;
+  auto &node = data_.At(to_daily(start_day));
   return node.IsTrading();
 }
 
@@ -369,7 +369,7 @@ sec_t Calendar::CombineDatetimeSos(sec_t tradingday, sec_t time) const
 
 #pragma region CalendarAstock
 CalendarData CalendarAstock::calendar_data;
-const CalendarAstock &CalendarAstock::GetInstance(std::string_view symbol)
+const CalendarAstock &CalendarAstock::GetInstance(std::string symbol)
 {
   static CalendarAstock cal(calendar_data, {{34200, 41400}, {46800, 54000}}, {1min, 5min, 15min, 30min, 1h, 2h}, "Asia/Shanghai");
   return cal;

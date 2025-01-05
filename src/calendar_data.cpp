@@ -124,7 +124,7 @@ CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator--()
   return *this;
 }
 
-void CalendarData::InitData(const std::vector<std::tuple<sec_t, uint8_t>> &calendar_data)
+void CalendarData::InitData(const std::vector<calendar_item> &calendar_data)
 {
   for (auto &[ts, status] : calendar_data)
   {
