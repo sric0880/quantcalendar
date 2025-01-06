@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 
-project(quantcalendar VERSION 1.0 LANGUAGES CXX)
+# LANGUAGES C如果不加，python setup.py install 会报错
+project(quantcalendar VERSION 1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -20,19 +21,19 @@ if(DEFINED SKBUILD)
   find_package(PythonExtensions REQUIRED)
   find_package(Cython REQUIRED)
 
-  add_cython_target(calendar "quantcalendar/calendar.pyx" CXX)
-  add_library(calendar MODULE ${calendar})
-  target_link_libraries(calendar
+  add_cython_target(_quantcalendar "quantcalendar/_quantcalendar.pyx" CXX)
+  add_library(_quantcalendar MODULE "src/calendar.cpp" "src/calendar_data.cpp" ${_quantcalendar})
+  target_link_libraries(_quantcalendar
     quantdata::qddatetime
     fmt::fmt
     unordered_dense::unordered_dense)
-  python_extension_module(calendar)
+  python_extension_module(_quantcalendar)
 
-  install(TARGETS calendar LIBRARY DESTINATION quantcalendar)
+  install(TARGETS _quantcalendar LIBRARY DESTINATION quantcalendar)
   install(FILES
     "quantcalendar/__init__.py"
-    "quantcalendar/calendar.pxd"
-    "quantcalendar/calendar.pyi"
+    "quantcalendar/_quantcalendar.pxd"
+    "quantcalendar/_quantcalendar.pyi"
     DESTINATION quantcalendar)
 else()
   add_library(quantcalendar STATIC "src/calendar.cpp" "src/calendar_data.cpp")

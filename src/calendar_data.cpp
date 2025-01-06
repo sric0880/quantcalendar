@@ -174,7 +174,7 @@ inline CalendarData::iter_range<CalendarData::tradedays_iterator> CalendarData::
   return CalendarData::iter_range<CalendarData::tradedays_iterator>{TradedaysUpper(start), TradedaysUpper(end)};
 }
 
-inline CalendarData::month_end_iterator CalendarData::MonthEndUpper(sec_t dt) const
+CalendarData::month_end_iterator CalendarData::MonthEndUpper(sec_t dt) const
 {
   auto it = SafeFind<CalendarData::month_end_iterator>(dt);
   if (!(*it).second.IsMonthEnd())
@@ -182,7 +182,7 @@ inline CalendarData::month_end_iterator CalendarData::MonthEndUpper(sec_t dt) co
   return it;
 }
 
-inline CalendarData::month_end_iterator CalendarData::MonthEndLower(sec_t dt) const
+CalendarData::month_end_iterator CalendarData::MonthEndLower(sec_t dt) const
 {
   auto it = SafeFind<CalendarData::month_end_iterator>(dt);
   if (!(*it).second.IsMonthEnd())
@@ -279,8 +279,4 @@ inline CalendarData::iter_range<CalendarData::weekday_iterator> CalendarData::We
   return CalendarData::iter_range<CalendarData::weekday_iterator>{WeekDayUpper(start, weekday), WeekDayUpper(end, weekday)};
 }
 
-inline const CalendarDataNode &CalendarData::At(sec_t dt) const
-{
-  return calendar_data_.at(dt);
-}
 NS_QMC_END

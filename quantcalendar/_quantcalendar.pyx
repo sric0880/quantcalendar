@@ -3,10 +3,10 @@
 # distutils: sources = src/calendar.cpp src/calendar_data.cpp
 from datetime import datetime
 
-from .calendar cimport Calendar
-# from .calendar cimport CalendarCTP
-from .calendar cimport CalendarAstock
-# from .calendar cimport Time7x24Calendar
+from ._quantcalendar cimport Calendar
+# from ._quantcalendar cimport CalendarCTP
+from ._quantcalendar cimport CalendarAstock
+# from ._quantcalendar cimport Time7x24Calendar
 
 cdef class PyCalendar:
     cdef const Calendar* c_cal
@@ -15,24 +15,18 @@ cdef class PyCalendar:
         pass
 
     def get_tradedays_gte(self, dt: datetime):
-        """get trade days >= dt"""
         pass
 
     def get_tradedays_lte(self, dt: datetime):
-        """get trade days <= dt"""
         pass
 
     def get_tradedays_next(self, dt: datetime):
-        """equal to get_tradedays_gte(dt)[0]"""
         pass
 
     def get_tradedays_last(self, dt: datetime):
-        """equal to get_tradedays_lte(dt)[-1]"""
         pass
 
-    def get_tradedays_between(self, start_dt: datetime, end_dt: datetime
-    ):
-        """get start_dt <= trade days <= end_dt"""
+    def get_tradedays_between(self, start_dt: datetime, end_dt: datetime):
         pass
 
     def get_current_bartime(self, dt: datetime, interval: int):

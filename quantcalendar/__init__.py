@@ -1,3 +1,3 @@
-from .calendar import PyCalendarAstock
+from ._quantcalendar import PyCalendarAstock as CalendarAstock
 
-__all__ = ["PyCalendarAstock"]
+__all__ = ["CalendarAstock"]

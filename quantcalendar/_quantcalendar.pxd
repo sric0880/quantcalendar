@@ -1,3 +1,4 @@
+# cython: language_level=3
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 from libcpp.string cimport string

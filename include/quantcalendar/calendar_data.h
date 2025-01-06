@@ -158,7 +158,7 @@ public:
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const;
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const;
   iter_range<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const;
-  const CalendarDataNode &At(sec_t dt) const;
+  const CalendarDataNode &At(sec_t dt) const { return calendar_data_.at(dt); };
 
 private:
   calendar_data_map calendar_data_;

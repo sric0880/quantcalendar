@@ -7,5 +7,5 @@ setup(
     description="trade calendar",
     license="MIT",
     packages=["quantcalendar"],
-    requires_python=">=3.9",
+    python_requires=">=3.9",
 )

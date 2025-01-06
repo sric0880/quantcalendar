@@ -76,7 +76,7 @@ Calendar::Calendar(
 {
   offset_minus_day_ = offset_ - iseconds_a_day;
   std::transform(intervals.begin(), intervals.end(), std::back_inserter(intervals_), [](seconds &sec)
-                 { return sec.count(); });
+                 { return static_cast<int>(sec.count()); });
   open_close_sessions_.emplace_back(sessions_[0].first, sessions_[sessions_.size() - 1].second);
   sorted_sessions_ = sessions_;
   std::sort(sorted_sessions_.begin(), sorted_sessions_.end(), [](const session_t &x, const session_t &y)
@@ -251,7 +251,8 @@ inline sec_t Calendar::GetCurrentBartime(time_point dt, seconds interval) const
 session_t Calendar::FindNextSession(time_point dt, bool with_breaks) const
 {
   auto &&[start_dt, start_day] = ApplyOffset(dt);
-  sec_t next_sos_dt, next_eos_dt = -1;
+  sec_t next_sos_dt = -1;
+  sec_t next_eos_dt = -1;
   auto it = TradedaysUpper(to_daily(start_day));
   do
   {
@@ -310,12 +311,12 @@ bool Calendar::IsTradingTime(time_point dt) const
   {
     if (start < end)
     {
-      if (tm >= seconds(start) and tm <= seconds(end))
+      if (tm >= seconds(start) && tm <= seconds(end))
         return true;
     }
     else
     {
-      if (tm >= seconds(start) or tm <= seconds(end))
+      if (tm >= seconds(start) || tm <= seconds(end))
         return true;
     }
   }
