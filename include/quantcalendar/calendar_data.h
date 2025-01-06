@@ -66,8 +66,9 @@ public:
   {
   protected:
     const_map_iterator it_;
-    const const_map_iterator &end_;
-    const const_map_iterator &rend_;
+    const CalendarData* data_;
+    const const_map_iterator& rend() const { return data_->rend_; };
+    const const_map_iterator& end() const { return data_->end_; };
 
   public:
     // iterator traits
@@ -76,14 +77,19 @@ public:
     using pointer = const_map_iterator::pointer;
     using reference = const_map_iterator::reference;
     using iterator_category = std::bidirectional_iterator_tag;
-    iterator(const_map_iterator &&it, const const_map_iterator &end, const const_map_iterator &rend) : it_(std::move(it)), end_(end), rend_(rend) {}
+    iterator() = default;
+    iterator(const_map_iterator &&it, const CalendarData* data) : it_(std::move(it)), data_(data) {}
+    iterator(const iterator &) = default;
+    iterator& operator=(const iterator &iter) = default;
     bool operator==(const iterator &other) const { return it_ == other.it_; }
     bool operator!=(const iterator &other) const { return it_ != other.it_; }
     virtual iterator &operator++() = 0;
     virtual iterator &operator--() = 0;
     reference operator*() const { return *it_; }
-    bool is_end() const { return (it_ == end_) || (it_ == rend_); }
+    pointer operator->() const { return it_.const_map_iterator::operator->(); }
+    bool is_end() const { return (it_ == end()) || (it_ == rend()); }
   };
+  friend iterator;
 
   class tradedays_iterator : public iterator
   {
@@ -128,7 +134,7 @@ public:
   class weekday_iterator : public iterator
   {
   public:
-    weekday_iterator(const_map_iterator &&it, const const_map_iterator &end, const const_map_iterator &rend, int weekday) : iterator(std::move(it), end, rend), weekday_(weekday) {}
+    weekday_iterator(const_map_iterator &&it, const CalendarData* data, int weekday) : iterator(std::move(it), data), weekday_(weekday) {}
     weekday_iterator &operator++() final override;
     weekday_iterator &operator--() final override;
 
@@ -168,10 +174,7 @@ private:
   template <typename Iter, typename... Args>
   Iter SafeFind(sec_t dt, Args... args) const
   {
-    const_map_iterator inner_it = calendar_data_.find(dt);
-    if (inner_it == end_ || inner_it == rend_)
-      throw OutOfCalendar();
-    return Iter{std::move(inner_it), end_, rend_, std::forward<Args>(args)...};
+    return Iter{calendar_data_.find(dt), this, std::forward<Args>(args)...};
   }
 };
 

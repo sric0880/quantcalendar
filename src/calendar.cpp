@@ -75,7 +75,7 @@ Calendar::Calendar(
                           bartime_right_(bartime_right)
 {
   offset_minus_day_ = offset_ - iseconds_a_day;
-  std::transform(intervals.begin(), intervals.end(), std::back_inserter(intervals_), [](seconds &sec)
+  std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](seconds& sec)
                  { return static_cast<int>(sec.count()); });
   open_close_sessions_.emplace_back(sessions_[0].first, sessions_[sessions_.size() - 1].second);
   sorted_sessions_ = sessions_;
