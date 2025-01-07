@@ -39,6 +39,10 @@ cdef extern from "quantcalendar/calendar_data.h" namespace "qmc" nogil:
 			node operator*()
 			bint operator==(iterator)
 			bint operator!=(iterator)
+			bint operator>(iterator)
+			bint operator>=(iterator)
+			bint operator<(iterator)
+			bint operator<=(iterator)
 			bint is_end() const
 		cppclass tradedays_iterator(iterator):
 			tradedays_iterator operator++()

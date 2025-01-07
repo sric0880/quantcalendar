@@ -1,6 +1,12 @@
+# PythonExtensions depends on FindPythonInterp and
+# FindPythonLibs modules which are removed since CMake 3.27.
+# WARNING: vcpkg will override VERSION
 cmake_minimum_required(VERSION 3.15...3.26)
 
-# LANGUAGES C如果不加，python setup.py install 会报错
+# C Language is a must. Because some link tests will be done on Macos
+# to use dynamic lookup for buiding python modules.
+# Weak link test that need c compiler cannot be skipped.
+# @see https://blog.tim-smith.us/2015/09/python-extension-modules-os-x/
 project(quantcalendar VERSION 1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)

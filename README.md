@@ -71,6 +71,9 @@ python .\setup.py build_ext --inplace -G "Visual Studio 17 2022" -- -DCMAKE_PREF
 ```sh
 pip install .
 
-# or 
+# build inplace
+python setup.py build_ext --inplace
+
+# build wheel
 python setup.py bdist_wheel
 ```

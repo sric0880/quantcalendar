@@ -49,7 +49,7 @@ struct CalendarDataNode
   bool IsMonthEnd() const { return state_[2]; };
   bool IsWeekBegin() const { return state_[3]; };
   bool IsWeekEnd() const { return state_[4]; };
-  bool IsWeekDay(int weekday) const { return cdate_.weekday == weekday; };
+  bool IsWeekDay(int weekday) const { return cdate_.weekday == weekday && state_[0]; };
   void SetTrading(bool on) const { state_[0] = on; }
   void SetMonthBegin(bool on) const { state_[1] = on; }
   void SetMonthEnd(bool on) const { state_[2] = on; }
@@ -66,9 +66,9 @@ public:
   {
   protected:
     const_map_iterator it_;
-    const CalendarData* data_;
-    const const_map_iterator& rend() const { return data_->rend_; };
-    const const_map_iterator& end() const { return data_->end_; };
+    const CalendarData *data_;
+    const const_map_iterator &rend() const { return data_->rend_; };
+    const const_map_iterator &end() const { return data_->end_; };
 
   public:
     // iterator traits
@@ -78,11 +78,15 @@ public:
     using reference = const_map_iterator::reference;
     using iterator_category = std::bidirectional_iterator_tag;
     iterator() = default;
-    iterator(const_map_iterator &&it, const CalendarData* data) : it_(std::move(it)), data_(data) {}
+    iterator(const_map_iterator &&it, const CalendarData *data) : it_(std::move(it)), data_(data) {}
     iterator(const iterator &) = default;
-    iterator& operator=(const iterator &iter) = default;
+    iterator &operator=(const iterator &iter) = default;
     bool operator==(const iterator &other) const { return it_ == other.it_; }
     bool operator!=(const iterator &other) const { return it_ != other.it_; }
+    bool operator>(const iterator &other) const { return it_->first > other.it_->first; }
+    bool operator>=(const iterator &other) const { return it_->first >= other.it_->first; }
+    bool operator<(const iterator &other) const { return it_->first < other.it_->first; }
+    bool operator<=(const iterator &other) const { return it_->first <= other.it_->first; }
     virtual iterator &operator++() = 0;
     virtual iterator &operator--() = 0;
     reference operator*() const { return *it_; }
@@ -134,7 +138,10 @@ public:
   class weekday_iterator : public iterator
   {
   public:
-    weekday_iterator(const_map_iterator &&it, const CalendarData* data, int weekday) : iterator(std::move(it), data), weekday_(weekday) {}
+    weekday_iterator() = default;
+    weekday_iterator(const weekday_iterator &) = default;
+    weekday_iterator &operator=(const weekday_iterator &iter) = default;
+    weekday_iterator(const_map_iterator &&it, const CalendarData *data, int weekday) : iterator(std::move(it), data), weekday_(weekday) {}
     weekday_iterator &operator++() final override;
     weekday_iterator &operator--() final override;
 
@@ -148,22 +155,22 @@ public:
   void InitData(const std::vector<calendar_item> &calendar_data);
   tradedays_iterator TradedaysUpper(sec_t dt) const;
   tradedays_iterator TradedaysLower(sec_t dt) const;
-  iter_range<tradedays_iterator> TradedaysBetween(sec_t start, sec_t end) const;
+  iter_range<tradedays_iterator> TradedaysBetween(sec_t start, sec_t end) const { return {TradedaysUpper(start), TradedaysLower(end)}; };
   month_end_iterator MonthEndUpper(sec_t dt) const;
   month_end_iterator MonthEndLower(sec_t dt) const;
-  iter_range<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const;
+  iter_range<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const { return {MonthEndUpper(start), MonthEndLower(end)}; };
   month_begin_iterator MonthBeginUpper(sec_t dt) const;
   month_begin_iterator MonthBeginLower(sec_t dt) const;
-  iter_range<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const;
+  iter_range<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const { return {MonthBeginUpper(start), MonthBeginLower(end)}; };
   week_end_iterator WeekEndUpper(sec_t dt) const;
   week_end_iterator WeekEndLower(sec_t dt) const;
-  iter_range<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const;
+  iter_range<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const { return {WeekEndUpper(start), WeekEndLower(end)}; };
   week_begin_iterator WeekBeginUpper(sec_t dt) const;
   week_begin_iterator WeekBeginLower(sec_t dt) const;
-  iter_range<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const;
+  iter_range<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const { return {WeekBeginUpper(start), WeekBeginLower(end)}; };
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const;
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const;
-  iter_range<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const;
+  iter_range<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const { return {WeekDayUpper(start, weekday), WeekDayLower(end, weekday)}; };
   const CalendarDataNode &At(sec_t dt) const { return calendar_data_.at(dt); };
 
 private:

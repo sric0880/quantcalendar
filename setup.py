@@ -8,4 +8,5 @@ setup(
     license="MIT",
     packages=["quantcalendar"],
     python_requires=">=3.9",
+    cmake_languages=("CXX",),
 )

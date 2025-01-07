@@ -136,6 +136,8 @@ void CalendarData::InitData(const std::vector<calendar_item> &calendar_data)
   for (auto &value : calendar_data_.values())
   {
     auto &node = value.second;
+    if (!node.IsTrading())
+      continue;
     if (pre_node)
     {
       if (node.dt_.date.mon != pre_node->dt_.date.mon)
@@ -169,15 +171,10 @@ CalendarData::tradedays_iterator CalendarData::TradedaysLower(sec_t dt) const
   return it;
 }
 
-inline CalendarData::iter_range<CalendarData::tradedays_iterator> CalendarData::TradedaysBetween(sec_t start, sec_t end) const
-{
-  return CalendarData::iter_range<CalendarData::tradedays_iterator>{TradedaysUpper(start), TradedaysUpper(end)};
-}
-
 CalendarData::month_end_iterator CalendarData::MonthEndUpper(sec_t dt) const
 {
   auto it = SafeFind<CalendarData::month_end_iterator>(dt);
-  if (!it.is_end()  && !it->second.IsMonthEnd())
+  if (!it.is_end() && !it->second.IsMonthEnd())
     ++it;
   return it;
 }
@@ -188,11 +185,6 @@ CalendarData::month_end_iterator CalendarData::MonthEndLower(sec_t dt) const
   if (!it.is_end() && !it->second.IsMonthEnd())
     --it;
   return it;
-}
-
-inline CalendarData::iter_range<CalendarData::month_end_iterator> CalendarData::MonthEndBetween(sec_t start, sec_t end) const
-{
-  return CalendarData::iter_range<CalendarData::month_end_iterator>{MonthEndUpper(start), MonthEndUpper(end)};
 }
 
 CalendarData::month_begin_iterator CalendarData::MonthBeginUpper(sec_t dt) const
@@ -211,11 +203,6 @@ CalendarData::month_begin_iterator CalendarData::MonthBeginLower(sec_t dt) const
   return it;
 }
 
-inline CalendarData::iter_range<CalendarData::month_begin_iterator> CalendarData::MonthBeginBetween(sec_t start, sec_t end) const
-{
-  return CalendarData::iter_range<CalendarData::month_begin_iterator>{MonthBeginUpper(start), MonthBeginUpper(end)};
-}
-
 CalendarData::week_end_iterator CalendarData::WeekEndUpper(sec_t dt) const
 {
   auto it = SafeFind<CalendarData::week_end_iterator>(dt);
@@ -230,11 +217,6 @@ CalendarData::week_end_iterator CalendarData::WeekEndLower(sec_t dt) const
   if (!it.is_end() && !it->second.IsWeekEnd())
     --it;
   return it;
-}
-
-inline CalendarData::iter_range<CalendarData::week_end_iterator> CalendarData::WeekEndBetween(sec_t start, sec_t end) const
-{
-  return CalendarData::iter_range<CalendarData::week_end_iterator>{WeekEndUpper(start), WeekEndUpper(end)};
 }
 
 CalendarData::week_begin_iterator CalendarData::WeekBeginUpper(sec_t dt) const
@@ -253,11 +235,6 @@ CalendarData::week_begin_iterator CalendarData::WeekBeginLower(sec_t dt) const
   return it;
 }
 
-inline CalendarData::iter_range<CalendarData::week_begin_iterator> CalendarData::WeekBeginBetween(sec_t start, sec_t end) const
-{
-  return CalendarData::iter_range<CalendarData::week_begin_iterator>{WeekBeginUpper(start), WeekBeginUpper(start)};
-}
-
 CalendarData::weekday_iterator CalendarData::WeekDayUpper(sec_t dt, int weekday) const
 {
   auto it = SafeFind<CalendarData::weekday_iterator>(dt, weekday);
@@ -272,11 +249,6 @@ CalendarData::weekday_iterator CalendarData::WeekDayLower(sec_t dt, int weekday)
   if (!it.is_end() && !it->second.IsWeekDay(weekday))
     --it;
   return it;
-}
-
-inline CalendarData::iter_range<CalendarData::weekday_iterator> CalendarData::WeekDayBetween(sec_t start, sec_t end, int weekday) const
-{
-  return CalendarData::iter_range<CalendarData::weekday_iterator>{WeekDayUpper(start, weekday), WeekDayUpper(end, weekday)};
 }
 
 NS_QMC_END

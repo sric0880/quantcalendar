@@ -3,11 +3,19 @@
 # distutils: sources = src/calendar.cpp src/calendar_data.cpp
 from cython.operator cimport preincrement, predecrement
 from cython.operator cimport dereference as deref
+from libcpp.pair cimport pair
 
 from ._quantcalendar cimport Calendar, CalendarData
 # from ._quantcalendar cimport CalendarCTP
 from ._quantcalendar cimport CalendarAstock
 # from ._quantcalendar cimport Time7x24Calendar
+
+ctypedef CalendarData.tradedays_iterator tradedays_iterator
+ctypedef CalendarData.month_end_iterator month_end_iterator
+ctypedef CalendarData.month_begin_iterator month_begin_iterator
+ctypedef CalendarData.week_end_iterator week_end_iterator
+ctypedef CalendarData.week_begin_iterator week_begin_iterator
+ctypedef CalendarData.weekday_iterator weekday_iterator
 
 maxsize = 2**32-1
 cdef class PyCalendar:
@@ -15,7 +23,7 @@ cdef class PyCalendar:
 
     def get_tradedays_gte(self, dt: int, count: int=maxsize):
         ret = []
-        it = self.c_cal.TradedaysUpper(dt)
+        cdef tradedays_iterator it = self.c_cal.TradedaysUpper(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
@@ -24,7 +32,7 @@ cdef class PyCalendar:
 
     def get_tradedays_lte(self, dt: int, count: int=maxsize):
         ret = []
-        it = self.c_cal.TradedaysLower(dt)
+        cdef tradedays_iterator it = self.c_cal.TradedaysLower(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -33,72 +41,219 @@ cdef class PyCalendar:
         return ret
 
     def get_tradedays_between(self, start: int, end: int):
-        pass
+        ret = []
+        if (start >= end):
+            return ret
+        cdef pair[tradedays_iterator, tradedays_iterator] p = self.c_cal.TradedaysBetween(start, end)
+        if (p.first.is_end() or p.second.is_end()):
+            return ret
+        while (p.first <= p.second):
+            ret.append(deref(p.first).first)
+            preincrement(p.first)
+        return ret
 
     def get_tradeday_next(self, dt: int):
-        return self.get_tradedays_gte(dt, 1)
+        cdef tradedays_iterator it = self.c_cal.TradedaysUpper(dt)
+        return None if it.is_end() else deref(it).first
 
     def get_tradeday_last(self, dt: int):
-        return self.get_tradedays_lte(dt, 1)
+        cdef tradedays_iterator it = self.c_cal.TradedaysLower(dt)
+        return None if it.is_end() else deref(it).first
 
-    def get_month_ends_gte(self, dt: int, count: int = 0):
-        pass
+    def get_month_ends_gte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef month_end_iterator it = self.c_cal.MonthEndUpper(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            preincrement(it)
+            count -= 1
+        return ret
 
-    def get_month_ends_lte(self, dt: int, count: int = 0):
-        pass
+    def get_month_ends_lte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef month_end_iterator it = self.c_cal.MonthEndLower(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            predecrement(it)
+            count -= 1
+        ret.reverse()
+        return ret
 
     def get_month_ends_between(self, start: int, end: int):
-        pass
+        ret = []
+        if (start >= end):
+            return ret
+        cdef pair[month_end_iterator, month_end_iterator] p = self.c_cal.MonthEndBetween(start, end)
+        if (p.first.is_end() or p.second.is_end()):
+            return ret
+        while (p.first <= p.second):
+            ret.append(deref(p.first).first)
+            preincrement(p.first)
+        return ret
 
     def get_month_end_next(self, dt: int):
-        return self.get_month_ends_gte(dt, 1)[0]
+        cdef month_end_iterator it = self.c_cal.MonthEndUpper(dt)
+        return None if it.is_end() else deref(it).first
 
     def get_month_end_last(self, dt: int):
-        return self.get_month_ends_lte(dt, 1)[0]
+        cdef month_end_iterator it = self.c_cal.MonthEndLower(dt)
+        return None if it.is_end() else deref(it).first
 
-    def get_month_begins_gte(self, dt: int, count: int = 0):
-        pass
-    def get_month_begins_lte(self, dt: int, count: int = 0):
-        pass
-    def get_month_begins_between(self, start: int, end: int = None):
-        pass
+    def get_month_begins_gte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef month_begin_iterator it = self.c_cal.MonthBeginUpper(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            preincrement(it)
+            count -= 1
+        return ret
+
+    def get_month_begins_lte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef month_begin_iterator it = self.c_cal.MonthBeginLower(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            predecrement(it)
+            count -= 1
+        ret.reverse()
+        return ret
+
+    def get_month_begins_between(self, start: int, end: int):
+        ret = []
+        if (start >= end):
+            return ret
+        cdef pair[month_begin_iterator, month_begin_iterator] p = self.c_cal.MonthBeginBetween(start, end)
+        if (p.first.is_end() or p.second.is_end()):
+            return ret
+        while (p.first <= p.second):
+            ret.append(deref(p.first).first)
+            preincrement(p.first)
+        return ret
+
     def get_month_begin_next(self, dt: int):
-        pass
+        cdef month_begin_iterator it = self.c_cal.MonthBeginUpper(dt)
+        return None if it.is_end() else deref(it).first
+
     def get_month_begin_last(self, dt: int):
-        pass
+        cdef month_begin_iterator it = self.c_cal.MonthBeginLower(dt)
+        return None if it.is_end() else deref(it).first
 
-    def get_week_ends_gte(self, dt: int, count: int = 0):
-        pass
-    def get_week_ends_lte(self, dt: int, count: int = 0):
-        pass
-    def get_week_ends_between(self, start: int, end: int = None):
-        pass
+    def get_week_ends_gte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef week_end_iterator it = self.c_cal.WeekEndUpper(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            preincrement(it)
+            count -= 1
+        return ret
+
+    def get_week_ends_lte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef week_end_iterator it = self.c_cal.WeekEndLower(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            predecrement(it)
+            count -= 1
+        ret.reverse()
+        return ret
+
+    def get_week_ends_between(self, start: int, end: int):
+        ret = []
+        if (start >= end):
+            return ret
+        cdef pair[week_end_iterator, week_end_iterator] p = self.c_cal.WeekEndBetween(start, end)
+        if (p.first.is_end() or p.second.is_end()):
+            return ret
+        while (p.first <= p.second):
+            ret.append(deref(p.first).first)
+            preincrement(p.first)
+        return ret
+
     def get_week_end_next(self, dt: int):
-        pass
+        cdef week_end_iterator it = self.c_cal.WeekEndUpper(dt)
+        return None if it.is_end() else deref(it).first
+
     def get_week_end_last(self, dt: int):
-        pass
+        cdef week_end_iterator it = self.c_cal.WeekEndLower(dt)
+        return None if it.is_end() else deref(it).first
 
-    def get_week_begins_gte(self, dt: int, count: int = 0):
-        pass
-    def get_week_begins_lte(self, dt: int, count: int = 0):
-        pass
-    def get_week_begins_between(self, start: int, end: int = None):
-        pass
+    def get_week_begins_gte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef week_begin_iterator it = self.c_cal.WeekBeginUpper(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            preincrement(it)
+            count -= 1
+        return ret
+
+    def get_week_begins_lte(self, dt: int, count: int = maxsize):
+        ret = []
+        cdef week_begin_iterator it = self.c_cal.WeekBeginLower(dt)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            predecrement(it)
+            count -= 1
+        ret.reverse()
+        return ret
+
+    def get_week_begins_between(self, start: int, end: int):
+        ret = []
+        if (start >= end):
+            return ret
+        cdef pair[week_begin_iterator, week_begin_iterator] p = self.c_cal.WeekBeginBetween(start, end)
+        if (p.first.is_end() or p.second.is_end()):
+            return ret
+        while (p.first <= p.second):
+            ret.append(deref(p.first).first)
+            preincrement(p.first)
+        return ret
+
     def get_week_begin_next(self, dt: int):
-        pass
-    def get_week_begin_last(self, dt: int):
-        pass
+        cdef week_begin_iterator it = self.c_cal.WeekBeginUpper(dt)
+        return None if it.is_end() else deref(it).first
 
-    def get_week_days_gte(self, weekday: int, dt: int, count: int = 0):
-        pass
-    def get_week_days_lte(self, weekday: int, dt: int, count: int = 0):
-        pass
-    def get_week_days_between(self, weekday: int, start: int, end: int = None):
-        pass
+    def get_week_begin_last(self, dt: int):
+        cdef week_begin_iterator it = self.c_cal.WeekBeginLower(dt)
+        return None if it.is_end() else deref(it).first
+
+    def get_week_days_gte(self, weekday: int, dt: int, count: int = maxsize):
+        ret = []
+        cdef weekday_iterator it = self.c_cal.WeekDayUpper(dt, weekday)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            preincrement(it)
+            count -= 1
+        return ret
+
+    def get_week_days_lte(self, weekday: int, dt: int, count: int = maxsize):
+        ret = []
+        cdef weekday_iterator it = self.c_cal.WeekDayLower(dt, weekday)
+        while not it.is_end() and count > 0:
+            ret.append(deref(it).first)
+            predecrement(it)
+            count -= 1
+        ret.reverse()
+        return ret
+
+    def get_week_days_between(self, weekday: int, start: int, end: int):
+        ret = []
+        if (start >= end):
+            return ret
+        cdef pair[weekday_iterator, weekday_iterator] p = self.c_cal.WeekDayBetween(start, end, weekday)
+        if (p.first.is_end() or p.second.is_end()):
+            return ret
+        while (p.first <= p.second):
+            ret.append(deref(p.first).first)
+            preincrement(p.first)
+        return ret
+
     def get_week_day_next(self, weekday: int, dt: int):
-        pass
+        cdef weekday_iterator it = self.c_cal.WeekDayUpper(dt, weekday)
+        return None if it.is_end() else deref(it).first
+
     def get_week_day_last(self, weekday: int, dt: int):
-        pass
+        cdef weekday_iterator it = self.c_cal.WeekDayLower(dt, weekday)
+        return None if it.is_end() else deref(it).first
 
     def get_current_bartime(self, dt: int, interval: int):
         pass
