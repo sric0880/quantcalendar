@@ -15,27 +15,6 @@ using session_t = std::pair<sec_t, sec_t>;
 using time_point = system_clock::time_point;
 using days = duration<int, std::ratio_multiply<std::ratio<24>, hours::period>>;
 
-// constexpr seconds UnitToDuration(char u)
-// {
-//   switch (u)
-//   {
-//   case 's':
-//     return 1s;
-//   case 'm':
-//     return 1min;
-//   case 'h':
-//     return 1h;
-//   case 'd':
-//     return 1_d;
-//   case 'w':
-//     return 1_w;
-//   case 'M':
-//     return 1_m;
-//   default:
-//     throw std::invalid_argument(fmt::format("interval unit {} is not invalid", u));
-//   }
-// }
-
 // 特殊原因提前收盘或者延迟开盘
 struct SpecialSessions
 {
@@ -62,6 +41,11 @@ inline system_clock::duration to_time(const time_point &tp)
 inline sec_t to_daily(const datetime &dt)
 {
   return duration_cast<seconds>(duration_cast<days>(dt.to_duration())).count();
+}
+
+inline time_point to_time_point(double ts)
+{
+  return time_point(time_point::duration(static_cast<typename time_point::rep>(ts * time_point::period::den)));
 }
 
 /**
@@ -105,30 +89,39 @@ public:
    * @param start: 开始时间
    * @param end: 结束时间
    */
-  std::vector<sec_t> GetBartimes(seconds interval, time_point start, time_point end) const;
+  std::vector<sec_t> GetBartimes(seconds interval, time_point start, time_point end) const
+  {
+    return GetBartimesImpl(interval, start, 0, end);
+  }
   /**
    * 获取某段时间内所有的K线时间，含start
    * @param interval(seconds): K线间隔周期
    * @param start: 开始时间
    * @param count: K线数量
    */
-  std::vector<sec_t> GetBartimes(seconds interval, time_point start, size_t count) const;
+  std::vector<sec_t> GetBartimes(seconds interval, time_point start, size_t count) const
+  {
+    return GetBartimesImpl(interval, start, count, time_point::min());
+  }
   /**
    * 获取K线时间
    * @param dt: 当前时间
    * @param interval(seconds): K线间隔周期
    */
-  sec_t GetCurrentBartime(time_point dt, seconds interval) const;
+  sec_t GetCurrentBartime(time_point dt, seconds interval) const
+  {
+    return GetBartimesImpl(interval, dt, 1, time_point::min())[0];
+  }
 
   /// @brief 给定时间`dt`, 获取下一次(开盘, 收盘)时间。休息时间不算是收盘，每天只有一次开盘收盘时间。
   /// @param dt 当前时间
   /// @return pair(开盘, 收盘)时间
-  session_t GetNextOpenClose(time_point dt) const;
+  session_t GetNextOpenClose(time_point dt) const { return FindNextSession(dt, false); }
 
   /// @brief 给定时间`dt`, 获取下一次(开盘, 收盘)。休息时间段也算是收盘
   /// @param dt 当前时间
   /// @return pair(开盘, 收盘)时间
-  session_t GetNextSession(time_point dt) const;
+  session_t GetNextSession(time_point dt) const { return FindNextSession(dt, true); }
   // 返回交易时间段
   const std::vector<session_t> &GetSessions() const { return sessions_; }
   // 返回交易时间段(按开盘时间从小到大排序)

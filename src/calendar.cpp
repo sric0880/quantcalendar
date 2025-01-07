@@ -75,7 +75,7 @@ Calendar::Calendar(
                           bartime_right_(bartime_right)
 {
   offset_minus_day_ = offset_ - iseconds_a_day;
-  std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](seconds& sec)
+  std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](seconds &sec)
                  { return static_cast<int>(sec.count()); });
   open_close_sessions_.emplace_back(sessions_[0].first, sessions_[sessions_.size() - 1].second);
   sorted_sessions_ = sessions_;
@@ -124,16 +124,6 @@ void Calendar::CalcBartimes()
     for (auto inte : intervals_)
       bartimes_.emplace(inte, calc_bartimestamp_left(start, end, jumps, inte));
   }
-}
-
-inline std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, time_point end) const
-{
-  return GetBartimesImpl(interval, start, 0, end);
-}
-
-inline std::vector<sec_t> Calendar::GetBartimes(seconds interval, time_point start, size_t count) const
-{
-  return GetBartimesImpl(interval, start, count, time_point::min());
 }
 
 void Calendar::GenerateDailyBartimes(CalendarData::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const
@@ -243,11 +233,6 @@ std::vector<sec_t> Calendar::GetBartimesImpl(seconds interval, time_point start,
   return ret;
 }
 
-inline sec_t Calendar::GetCurrentBartime(time_point dt, seconds interval) const
-{
-  return GetBartimesImpl(interval, dt, 1, time_point::min())[0];
-}
-
 session_t Calendar::FindNextSession(time_point dt, bool with_breaks) const
 {
   auto &&[start_dt, start_day] = ApplyOffset(dt);
@@ -279,16 +264,6 @@ session_t Calendar::FindNextSession(time_point dt, bool with_breaks) const
   if (next_sos_dt == -1 || next_eos_dt == -1)
     throw OutOfCalendar();
   return {next_sos_dt + offset_, next_eos_dt + offset_};
-}
-
-inline session_t Calendar::GetNextOpenClose(time_point dt) const
-{
-  return FindNextSession(dt, false);
-}
-
-inline session_t Calendar::GetNextSession(time_point dt) const
-{
-  return FindNextSession(dt, true);
 }
 
 bool Calendar::IsTrading(time_point dt) const

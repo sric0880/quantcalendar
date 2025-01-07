@@ -3,9 +3,9 @@ from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 from libcpp.string cimport string
 
-cdef extern from "<chrono>" namespace "std" nogil:
+cdef extern from "<chrono>" namespace "std::chrono" nogil:
 	cdef cppclass seconds:
-		pass
+		seconds(long long)
 	cdef cppclass system_clock:
 		pass
 	cdef cppclass time_point[_Clock, _Duration=*]:
@@ -67,6 +67,7 @@ cdef extern from "quantcalendar/calendar_data.h" namespace "qmc" nogil:
 cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	ctypedef pair[sec_t, sec_t] session_t
 	ctypedef time_point[system_clock] tp
+	cdef tp to_time_point(double ts)
 	cdef cppclass Calendar:
 		CalendarData.tradedays_iterator TradedaysUpper(sec_t dt)
 		CalendarData.tradedays_iterator TradedaysLower(sec_t dt)
@@ -87,7 +88,7 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		CalendarData.weekday_iterator WeekDayLower(sec_t dt, int weekday)
 		pair[CalendarData.weekday_iterator, CalendarData.weekday_iterator] WeekDayBetween(sec_t start, sec_t end, int weekday)
 		vector[sec_t] GetBartimes(seconds interval, tp start, tp end) except +
-		vector[sec_t] GetBartimes(seconds interval, tp start, int count) except +
+		vector[sec_t] GetBartimes(seconds interval, tp start, size_t count) except +
 		sec_t GetCurrentBartime(tp dt, seconds interval) except +
 		session_t GetNextOpenClose(tp dt)
 		session_t GetNextSession(tp dt)

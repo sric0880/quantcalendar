@@ -31,7 +31,7 @@ constexpr seconds operator""_w(unsigned long long __d)
 
 constexpr seconds operator""_m(unsigned long long __d)
 {
-  return seconds(static_cast<sec_t>(__d * 30 * 7 * iseconds_a_day));
+  return seconds(static_cast<sec_t>(__d * 30 * iseconds_a_day));
 }
 
 struct CalendarDataNode

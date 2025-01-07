@@ -77,3 +77,22 @@ python setup.py build_ext --inplace
 # build wheel
 python setup.py bdist_wheel
 ```
+
+
+## 测试
+
+使用方法见测试用例
+
+### C++
+
+```sh
+
+```
+
+### Python
+
+先原地构建，再运行
+
+```sh
+python -m pytest tests
+```

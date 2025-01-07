@@ -1,10 +1,9 @@
-from datetime import date, datetime, time, timezone
+from datetime import datetime, timezone
 
-import pandas as pd
 import pytest
 import quantdata as qd
 
-from quantcalendar import CalendarAstock
+from quantcalendar import CalendarAstock, bar_unit
 
 
 @pytest.fixture(scope="module")
@@ -24,6 +23,12 @@ def ts(year, month, day, hour=0, minute=0, second=0):
     return int(dt.timestamp())
 
 
+def tp(year, month, day, hour=0, minute=0, second=0):
+    return datetime(
+        year, month, day, hour, minute, second, tzinfo=timezone.utc
+    ).timestamp()
+
+
 # fmt: off
 def test_get_tradedays(mongo_client):
     cal = CalendarAstock()
@@ -32,7 +37,9 @@ def test_get_tradedays(mongo_client):
     assert cal.get_tradedays_lte(ts(2024, 9, 17))[-1] == ts(2024, 9, 13)
     assert cal.get_tradedays_lte(ts(2024, 9, 14))[-1] == ts(2024, 9, 13)
     assert cal.get_tradedays_lte(ts(2024, 9, 13))[-1] == ts(2024, 9, 13)
+    assert cal.get_tradeday_next(ts(2025,12,1)) is None
     assert cal.get_tradeday_last(ts(2024, 9, 13)) == ts(2024, 9, 13)
+    assert cal.get_tradeday_last(ts(1990,1,1)) is None
     assert cal.get_tradedays_between(ts(2024, 9, 13), ts(2024, 9, 17)) == [ts(2024, 9, 13)]
     assert cal.get_tradedays_between(ts(2024, 9, 13), ts(2024, 9, 18)) == [ts(2024, 9, 13), ts(2024, 9, 18)]
     month_ends = [ ts(2024, 1, 31), ts(2024, 2, 29), ts(2024, 3, 29), ]
@@ -63,30 +70,29 @@ def test_get_tradedays(mongo_client):
     assert cal.get_week_days_gte(3, ts(2024, 2, 7), count=3) == week_days
 
 
-# def test_bartimes(mongo_client):
-#     cal = CalendarAstock()
-#     assert cal.is_trading(ts(2024, 9, 20, 9, 0)) == False
-#     assert cal.is_trading(ts(2024, 9, 20, 9, 30)) == True
-#     assert cal.is_trading(ts(2024, 9, 20, 11, 30)) == True
-#     assert cal.is_trading(ts(2024, 9, 20, 12, 0)) == False
-#     assert cal.is_trading(ts(2024, 9, 20, 13, 0)) == True
-#     assert cal.is_trading(ts(2024, 9, 20, 15, 0)) == True
-#     assert cal.is_trading(ts(2024, 9, 20, 15, 1)) == False
-#     assert cal.is_trading(ts(2024, 9, 17, 10, 0)) == False
-#     assert cal.get_open_close_dt(ts(2024, 9, 13)) == (ts(2024, 9, 13, 9, 30), ts(2024, 9, 13, 15))
-#     assert cal.get_open_close_dt(ts(2024, 9, 14)) == (ts(2024, 9, 18, 9, 30), ts(2024, 9, 18, 15))
-#     assert cal.get_open_close_dt(ts(2024, 9, 18, 10)) == (ts(2024, 9, 19, 9, 30), ts(2024, 9, 18, 15))
-#     # test bartime
-#     bartime_testcases = [
-#         (ts(2024, 9, 20, 15), ts(2024, 9, 20, 15), 60),
-#         (ts(2024, 9, 20, 15, 0, 1), ts(2024, 9, 23, 9, 31), 60),
-#         (ts(2024, 9, 23, 9, 30), ts(2024, 9, 23, 9, 35), 300),
-#         (ts(2024, 9, 20, 8, 30), ts(2024, 9, 20, 10, 30), I1H),
-#         (ts(2024, 9, 20, 15), ts(2024, 9, 20, 15), I1H),
-#         (ts(2024, 9, 20, 15), ts(2024, 9, 20, 15), I2H),
-#         (ts(2024, 10, 1), ts(2024, 10, 8, 15), DAILY),
-#         (ts(2024, 10, 6), ts(2024, 10, 11, 15), WEEKLY),
-#         (ts(2024, 10, 11), ts(2024, 10, 31, 15), MONTHLY),
-#     ]
-#     for query, answer, interval in bartime_testcases:
-#         assert cal.get_current_bartime(query, interval) == answer
+def test_bartimes(mongo_client):
+    cal = CalendarAstock()
+    assert cal.is_trading(tp(2024, 9, 20, 9, 0)) == False
+    assert cal.is_trading(tp(2024, 9, 20, 9, 30)) == True
+    assert cal.is_trading(tp(2024, 9, 20, 11, 30)) == True
+    assert cal.is_trading(tp(2024, 9, 20, 12, 0)) == False
+    assert cal.is_trading(tp(2024, 9, 20, 13, 0)) == True
+    assert cal.is_trading(tp(2024, 9, 20, 15, 0)) == True
+    assert cal.is_trading(tp(2024, 9, 20, 15, 1)) == False
+    assert cal.is_trading(tp(2024, 9, 17, 10, 0)) == False
+    assert cal.get_next_open_close(tp(2024, 9, 13)) == (ts(2024, 9, 13, 9, 30), ts(2024, 9, 13, 15))
+    assert cal.get_next_open_close(tp(2024, 9, 14)) == (ts(2024, 9, 18, 9, 30), ts(2024, 9, 18, 15))
+    assert cal.get_next_open_close(tp(2024, 9, 18, 10)) == (ts(2024, 9, 19, 9, 30), ts(2024, 9, 18, 15))
+    bartime_testcases = [
+        (tp(2024, 9, 20, 15), ts(2024, 9, 20, 15), 60),
+        (tp(2024, 9, 20, 15, 0, 1), ts(2024, 9, 23, 9, 31), 60),
+        (tp(2024, 9, 23, 9, 30), ts(2024, 9, 23, 9, 35), 300),
+        (tp(2024, 9, 20, 8, 30), ts(2024, 9, 20, 10, 30), 1*bar_unit.hour),
+        (tp(2024, 9, 20, 15), ts(2024, 9, 20, 15), 1*bar_unit.hour),
+        (tp(2024, 9, 20, 15), ts(2024, 9, 20, 15), 2*bar_unit.hour),
+        (tp(2024, 10, 1), ts(2024, 10, 8, 15), bar_unit.day),
+        (tp(2024, 10, 6), ts(2024, 10, 11, 15), bar_unit.week),
+        (tp(2024, 10, 11), ts(2024, 10, 31, 15), bar_unit.mon),
+    ]
+    for query, answer, interval in bartime_testcases:
+        assert cal.get_bartime_next(query, interval) == answer

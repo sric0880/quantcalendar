@@ -138,43 +138,75 @@ class PyCalendar:
 
     def get_week_day_last(self, weekday: int, dt: int)  -> int:
         """get last week day of `weekday`, include `dt`
-        
+
         Params:
          - weekday: monday to sunday [1, 7]
          """
 
-    def get_current_bartime(self, dt: int, interval: int):
-        """"""
+    def get_bartime_next(self, dt: float, interval: int) -> int:
+        """ get current bartime, include `dt`
 
-    def get_bartimes(self, interval: int, start: int, end: int = None, count=2**32-1):
-        """"""
+        Params:
+         * dt: timestamp
+         * interval: interval seconds of bars
+        """
 
-    def get_special_sessions(self, dt: int):
-        """"""
+    def get_bartimes_gte(self, interval: int, start: float, count: int=2**32-1) -> list[int]:
+        """ get `count` bartimes that are >= `start`
 
-    def get_open_close_dt(self, dt: int):
-        """"""
+        Params:
+         * interval: interval seconds of bars
+         * start: start timestamp
+         * count: max count to get
+        """
 
-    def get_session_dt(self, dt: int):
-        """"""
+    def get_bartimes_between(self, interval: int, start: float, end: float) -> list[int]:
+        """ get bartimes that are all in [`start`, `end`)
 
-    def get_sessions(self):
-        """"""
+        Params:
+         * interval: interval seconds of bars
+         * start: start timestamp
+         * end: end timestamp
+        """
 
-    def get_ordered_sessions(self):
-        """"""
+    def get_next_open_close(self, dt: float) -> tuple[int, int]:
+        """ 给定时间`dt`, 获取下一次(开盘, 收盘)时间。休息时间不算是收盘，每天只有一次开盘收盘时间。
 
-    def get_open_close_time(self):
-        """"""
+        Params:
+         - dt 当前时间
 
-    def is_trading(self, dt: int):
-        """"""
+        Return:
+         - pair(开盘, 收盘)时间
+        """
 
-    def is_trading_day(self, dt: int):
-        """"""
+    def get_next_session(self, dt: float) -> tuple[int, int]:
+        """ 给定时间`dt`, 获取下一次(开盘, 收盘)。休息时间段也算是收盘
 
-    def is_trading_time(self, dt: int):
-        """"""
+        Params:
+         - dt: 当前时间
+        Return:
+         - pair(开盘, 收盘)时间
+        """
+
+    def get_sessions(self) -> list[tuple[int, int]]:
+        """ 返回交易时间段 """
+
+    def get_ordered_sessions(self) -> list[tuple[int, int]]:
+        """ 返回交易时间段(按开盘时间从小到大排序) """
+
+    def get_open_close_time(self) -> tuple[int, int]:
+        """ 返回开盘收盘时间 """
+
+    def is_trading(self, dt: float) -> bool:
+        """ 判断时间`dt`是否正在交易中, `dt`时间必须是交易所本地时间
+        """
+
+    def is_trading_day(self, dt: float) -> bool:
+        """ 判断是否交易日 """
+
+    def is_trading_time(self, dt: float) -> bool:
+        """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
+        """
 
 # cdef class CalendarCTP(PyCalendar):
 #     def __cinit__(self):
