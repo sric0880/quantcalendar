@@ -1,36 +1,23 @@
-from datetime import datetime, timezone
-
 import pytest
 import quantdata as qd
+from common import tp, ts
 
 from quantcalendar import CalendarAstock, bar_unit
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="module", autouse=True)
 def mongo_client():
     conn = qd.mongo_connect("127.0.0.1", tz_aware=True)  # utc
     print("connect mongodb")
     days = qd.mongo_get_data(conn["quantcalendar"], "cn_stock")
     data = [(int(day["_id"].timestamp()), day["status"]) for day in days]
     CalendarAstock.InitData(data)
-    yield
     qd.mongo_close(conn)
     print("disconnect mongodb")
 
 
-def ts(year, month, day, hour=0, minute=0, second=0):
-    dt = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
-    return int(dt.timestamp())
-
-
-def tp(year, month, day, hour=0, minute=0, second=0):
-    return datetime(
-        year, month, day, hour, minute, second, tzinfo=timezone.utc
-    ).timestamp()
-
-
 # fmt: off
-def test_get_tradedays(mongo_client):
+def test_get_tradedays():
     cal = CalendarAstock()
     assert cal.get_tradedays_gte(ts(2023, 6, 30))[0] == ts(2023, 6, 30)
     assert cal.get_tradeday_next(ts(2023, 6, 30)) == ts(2023, 6, 30)
@@ -70,7 +57,7 @@ def test_get_tradedays(mongo_client):
     assert cal.get_week_days_gte(3, ts(2024, 2, 7), count=3) == week_days
 
 
-def test_bartimes(mongo_client):
+def test_bartimes():
     cal = CalendarAstock()
     assert cal.is_trading(tp(2024, 9, 20, 9, 0)) == False
     assert cal.is_trading(tp(2024, 9, 20, 9, 30)) == True

@@ -1,5 +1,8 @@
 #include <string>
 #include <algorithm>
+#include "fmt/format.h"
+#include "fmt/ranges.h"
+#include "fmt/chrono.h"
 
 #include "quantcalendar/calendar.h"
 
@@ -64,7 +67,7 @@ auto calc_bartimestamp_right(int session_start, int session_end, const std::vect
 Calendar::Calendar(
     const CalendarData &data,
     std::vector<session_t> &&sessions,
-    std::vector<seconds> &&intervals,
+    const std::vector<seconds> &intervals,
     std::string_view tz,
     sec_t offset,
     bool bartime_right) : data_(data),
@@ -75,7 +78,7 @@ Calendar::Calendar(
                           bartime_right_(bartime_right)
 {
   offset_minus_day_ = offset_ - iseconds_a_day;
-  std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](seconds &sec)
+  std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](const seconds &sec)
                  { return static_cast<int>(sec.count()); });
   open_close_sessions_.emplace_back(sessions_[0].first, sessions_[sessions_.size() - 1].second);
   sorted_sessions_ = sessions_;
@@ -219,7 +222,7 @@ std::vector<sec_t> Calendar::GetBartimesImpl(seconds interval, time_point start,
     }
     else
     {
-      throw InvalidArgumentInterval(inte);
+      throw InvalidInterval(inte);
     }
   }
   else
@@ -248,13 +251,13 @@ session_t Calendar::FindNextSession(time_point dt, bool with_breaks) const
       if (next_sos_dt == -1 && sos != -1)
       {
         auto session_start = CombineDatetimeSos(day, sos);
-        if (dt < system_clock::from_time_t(session_start))
+        if (start_dt < system_clock::from_time_t(session_start))
           next_sos_dt = session_start;
       }
       if (next_eos_dt == -1 && eos != -1)
       {
         auto session_end = CombineDatetime(day, eos);
-        if (dt <= system_clock::from_time_t(session_end))
+        if (start_dt <= system_clock::from_time_t(session_end))
           next_eos_dt = session_end;
       }
     }
@@ -275,8 +278,15 @@ bool Calendar::IsTrading(time_point dt) const
 bool Calendar::IsTradingDay(time_point dt) const
 {
   auto start_day = ApplyOffset(dt).second;
-  auto &node = data_.At(to_daily(start_day));
-  return node.IsTrading();
+  try
+  {
+    auto &node = data_.get().At(to_daily(start_day));
+    return node.IsTrading();
+  }
+  catch (std::out_of_range &e)
+  {
+    throw OutOfCalendar();
+  }
 }
 
 bool Calendar::IsTradingTime(time_point dt) const
@@ -298,14 +308,14 @@ bool Calendar::IsTradingTime(time_point dt) const
   return false;
 }
 
-void Calendar::InitSpecialSessions(ankerl::unordered_dense::map<sec_t, SpecialSessions> &&sessions)
+void Calendar::InitSpecialSessions(ankerl::unordered_dense::map<sec_t, std::shared_ptr<SpecialSessions>> &&sessions) noexcept
 {
   special_sessions_.swap(sessions);
 }
 
-const SpecialSessions *Calendar::GetSpecialSessions(sec_t dt) const
+const std::shared_ptr<SpecialSessions> Calendar::GetSpecialSessions(sec_t dt) const
 {
-  return special_sessions_.contains(dt) ? &special_sessions_.at(dt) : nullptr;
+  return special_sessions_.contains(dt) ? special_sessions_.at(dt) : nullptr;
 }
 
 const std::vector<session_t> &Calendar::GetSessionsWithBreaks(sec_t dt) const
@@ -341,15 +351,182 @@ sec_t Calendar::CombineDatetimeSos(sec_t tradingday, sec_t time) const
     return CombineDatetime(tradingday, time);
 }
 
+inline std::string time_fmt(sec_t sec)
+{
+  return fmt::format("{:%H:%M:%S}", seconds(sec));
+}
+
+std::string Calendar::ToString() const
+{
+  std::vector<std::string> sessions;
+  int i = 1;
+  for (auto &[_sos, _eos] : sessions_)
+  {
+    if (_eos <= _sos)
+      sessions.emplace_back(fmt::format("\t{}) {}-{}(+1 days)", i, time_fmt(_sos), time_fmt(_eos)));
+    else
+      sessions.emplace_back(fmt::format("\t{}) {}-{}", i, time_fmt(_sos), time_fmt(_eos)));
+    ++i;
+  }
+
+  std::vector<std::string> bartimestamps;
+  for (auto &[inte, bts] : bartimes_)
+  {
+    int k = inte;
+    k /= 60;
+    char unit = 'm';
+    if (k >= 60)
+    {
+      k /= 60;
+      unit = 'H';
+    }
+    size_t bts_size = bts.size();
+    std::vector<std::string> bt_strs(bts_size);
+    std::transform(bts.begin(), bts.end(), bt_strs.begin(), [](const int &sec)
+                   { return time_fmt(sec); });
+    if (bts_size > 8)
+      bartimestamps.emplace_back(fmt::format("\t{}{})\t[{}]", k, unit, fmt::format("{}, {}, {}, {},...{}, {}, {}, {}", bt_strs[0], bt_strs[1], bt_strs[2], bt_strs[3], bt_strs[bts_size - 4], bt_strs[bts_size - 3], bt_strs[bts_size - 2], bt_strs[bts_size - 1])));
+    else
+      bartimestamps.emplace_back(fmt::format("\t{}{})\t[{}]", k, unit, fmt::join(bt_strs, ", ")));
+  }
+  return fmt::format("时区: {}\n交易时间段:\n {}\nK线时间点划分:\n {}\n", tz_, fmt::join(sessions, "\n"), fmt::join(bartimestamps, "\n"));
+}
+
 #pragma endregion
 
 #pragma region CalendarAstock
 CalendarData CalendarAstock::calendar_data;
-const CalendarAstock &CalendarAstock::GetInstance(std::string symbol)
+const CalendarAstock &CalendarAstock::GetInstance(const std::string &symbol)
 {
   static CalendarAstock cal(calendar_data, {{34200, 41400}, {46800, 54000}}, {1min, 5min, 15min, 30min, 1h, 2h}, "Asia/Shanghai");
   return cal;
 }
+#pragma endregion
+
+#pragma region CalendarCTP
+CalendarData CalendarCTP::calendar_data;
+ankerl::unordered_dense::map<std::string, CalendarCTP> CalendarCTP::calendar_ctps;
+
+bool CalendarCTP::HasNight() const
+{
+  for (auto const &[o, c] : GetSessions())
+  {
+    if (o >= 21 * 3600) // 夜盘都是晚上9点开始
+      return true;
+  }
+  return false;
+}
+
+void uppercase(std::string &str)
+{
+  std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+}
+
+/// @brief To product id and to upper case
+/// @param symbol
+/// @return upper cased product id
+std::string convert_symbol(const std::string &symbol)
+{
+  auto b = symbol.begin();
+  auto e = symbol.end();
+  auto it = std::find_if(b, e, [](unsigned char c)
+                         { return std::isdigit(c); });
+  if (it != e)
+  {
+    auto ret = symbol.substr(0, std::distance(b, it));
+    uppercase(ret);
+    return ret;
+  }
+  else
+  {
+    std::string ret(symbol);
+    uppercase(ret);
+    return ret;
+  }
+}
+
+void CalendarCTP::InitData(const std::vector<calendar_item> &data, std::vector<session_item> &&sessions)
+{
+  calendar_data.InitData(data);
+  std::vector<seconds> intervals{1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h};
+  const std::string tz("Asia/Shanghai");
+  constexpr const sec_t offset = duration_cast<seconds>(2h + 30min).count();
+  // common sessions
+  calendar_ctps.emplace("", CalendarCTP(calendar_data, {{75600, 9000}, {32400, 54900}}, intervals, tz, offset));
+  // custom sessions
+  for (auto &[product_id, market_time] : sessions)
+  {
+    uppercase(product_id);
+    calendar_ctps.emplace(product_id, CalendarCTP(calendar_data, std::move(market_time), intervals, tz, offset));
+  }
+  // set special sessions
+  // 特殊规则：交易日夜盘不开盘。第二天是节假日，夜盘不交易
+  std::vector<sec_t> before_holidays;
+  std::vector<sec_t> after_holidays;
+  const std::pair<sec_t, CalendarDataNode> *pre_item = nullptr;
+  auto end = calendar_data.cend();
+  for (auto it = calendar_data.cbegin(); it != end; ++it)
+  {
+    auto &item = *it;
+    if (pre_item)
+    {
+      auto pre_status = pre_item->second.status_;
+      auto cur_status = item.second.status_;
+      if (pre_status == 1 && cur_status == 3) // 今天节假日，昨天夜盘不交易
+      {
+        before_holidays.push_back(pre_item->first);
+      }
+      else if (pre_status == 3 && cur_status == 1) // 昨天节假日，今日上午算开盘
+      {
+        after_holidays.push_back(item.first);
+      }
+    }
+    pre_item = &item;
+  }
+  for (auto &[pid, cal] : calendar_ctps)
+  {
+    if (cal.HasNight())
+    {
+      // 删除夜盘开盘时间
+      auto &open_close = cal.GetOpenCloseTime();
+      auto &sorted_sessions = cal.GetOrderedSessions();
+      std::vector<session_t> sorted_sessions_without_night;
+      std::copy_if(sorted_sessions.begin(),
+                   sorted_sessions.end(),
+                   std::back_inserter(sorted_sessions_without_night),
+                   [](const session_t &s)
+                   { return s.first != 21 * 3600; });
+      auto before_holiday_session = std::make_shared<SpecialSessions>(std::vector<session_t>{{-1, open_close.second}}, sorted_sessions_without_night);
+
+      // 额外添加一个开盘时间
+      auto after_holiday_session = std::make_shared<SpecialSessions>(std::vector<session_t>{{9 * 3600, -1}, open_close}, sorted_sessions);
+
+      ankerl::unordered_dense::map<sec_t, std::shared_ptr<SpecialSessions>> special_sessions;
+      for (auto &day : before_holidays)
+      {
+        special_sessions.emplace(day, before_holiday_session);
+      }
+      for (auto &day : after_holidays)
+      {
+        special_sessions.emplace(day, after_holiday_session);
+      }
+      cal.InitSpecialSessions(std::move(special_sessions));
+    }
+  }
+}
+
+const CalendarCTP &CalendarCTP::GetInstance(const std::string &symbol)
+{
+  try
+  {
+    return calendar_ctps.at(convert_symbol(symbol));
+  }
+  catch (std::out_of_range &e)
+  {
+    throw CalendarNotFound("CalendarCTP", symbol);
+  }
+}
+
 #pragma endregion
 
 NS_QMC_END

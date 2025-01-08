@@ -38,4 +38,26 @@ int main(int argv, char *args[])
 
   qmc::CalendarAstock::InitData(results);
   const qmc::CalendarAstock &astock_cal = qmc::CalendarAstock::GetInstance();
+  std::cout << astock_cal.ToString() << std::endl;
+
+  auto cursor1 = MongoGetData("quantcalendar", "cn_future_sessions");
+  auto sessions = MongoFetchArrays<std::string, std::vector<qmc::session_t>>(std::move(cursor1),
+                                                                             [](const document::view &view)
+                                                                             {
+                                                                               std::vector<qmc::session_t> market_time;
+                                                                               for (auto &pair : view["market_time"].get_array().value)
+                                                                               {
+                                                                                 market_time.emplace_back(pair[0].get_int32().value, pair[1].get_int32().value);
+                                                                               }
+                                                                               return std::tuple{view["_id"].get_string().value, market_time};
+                                                                             });
+  auto cursor2 = MongoGetData("quantcalendar", "cn_future");
+  auto results2 = MongoFetchArrays<qmc::sec_t, char>(std::move(cursor2), [](const document::view &view)
+                                                     { return std::tuple{duration_cast<seconds>(view["_id"].get_date().value).count(), static_cast<char>(view["status"].get_int32().value)}; });
+  qmc::CalendarCTP::InitData(results2, std::move(sessions));
+  auto const &ctp_cal = qmc::CalendarCTP::GetInstance("ag2405");
+  std::cout << ctp_cal.ToString() << std::endl;
+
+  auto const &ctp_cal1 = qmc::CalendarCTP::GetInstance("IH");
+  std::cout << ctp_cal1.ToString() << std::endl;
 }

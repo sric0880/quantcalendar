@@ -98,10 +98,19 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		bint IsTrading(tp dt)
 		bint IsTradingDay(tp dt)
 		bint IsTradingTime(tp dt)
+		string ToString()
 
 
 	cdef cppclass CalendarAstock(Calendar):
 		@staticmethod
 		void InitData(const vector[calendar_item] &data) except +
 		@staticmethod
-		CalendarAstock &GetInstance(string symbol) except +
+		CalendarAstock &GetInstance(const string &symbol) except +
+
+	cdef cppclass CalendarCTP(Calendar):
+		ctypedef pair[string, vector[session_t]] session_item
+		bint HasNight()
+		@staticmethod
+		void InitData(const vector[calendar_item] &data, vector[session_item] sessions) except + # sessions is rvalue
+		@staticmethod
+		CalendarCTP &GetInstance(const string &symbol) except +

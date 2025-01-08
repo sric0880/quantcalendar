@@ -1,4 +1,5 @@
 from ._quantcalendar import PyCalendarAstock as CalendarAstock
+from ._quantcalendar import PyCalendarCTP as CalendarCTP
 
 
 class bar_unit:
@@ -10,4 +11,4 @@ class bar_unit:
     mon = 30 * 86400
 
 
-__all__ = ["CalendarAstock", "bar_unit"]
+__all__ = ["CalendarAstock", "CalendarCTP", "bar_unit"]

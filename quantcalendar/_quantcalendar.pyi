@@ -208,33 +208,18 @@ class PyCalendar:
         """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
         """
 
-# cdef class CalendarCTP(PyCalendar):
-#     def __cinit__(self):
-#         self.c_cal = new c_CalendarCTP()
-
-#     def __init__(self, int x0, int y0, int x1, int y1):
-#         self.c_rect.x0 = x0
-#         self.c_rect.y0 = y0
-#         self.c_rect.x1 = x1
-#         self.c_rect.y1 = y1
-
-#     def __dealloc__(self):
-#         del self.c_cal
-
 class PyCalendarAstock(PyCalendar):
     @staticmethod
     def InitData(data):
         """"""
 
-# cdef class Time7x24Calendar(Calendar):
-#     def __cinit__(self):
-#         self.c_cal = new c_Time7x24Calendar()
+class PyCalendarCTP(PyCalendar):
+    def __init__(self, symbol: str):
+        """"""
 
-#     def __init__(self, int x0, int y0, int x1, int y1):
-#         self.c_rect.x0 = x0
-#         self.c_rect.y0 = y0
-#         self.c_rect.x1 = x1
-#         self.c_rect.y1 = y1
+    def has_night(self) -> bool:
+        """是否又夜盘交易"""
 
-#     def __dealloc__(self):
-#         del self.c_cal
+    @staticmethod
+    def InitData(data, sessions):
+        """"""

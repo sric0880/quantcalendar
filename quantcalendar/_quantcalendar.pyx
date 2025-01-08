@@ -4,10 +4,10 @@
 from cython.operator cimport preincrement, predecrement
 from cython.operator cimport dereference as deref
 from libcpp.pair cimport pair
+from libcpp.utility cimport move
 
 from ._quantcalendar cimport tp, seconds
-from ._quantcalendar cimport Calendar, CalendarData, CalendarAstock
-# from ._quantcalendar cimport CalendarCTP
+from ._quantcalendar cimport Calendar, CalendarData, CalendarAstock, CalendarCTP
 # from ._quantcalendar cimport Time7x24Calendar
 
 ctypedef CalendarData.tradedays_iterator tradedays_iterator
@@ -289,18 +289,9 @@ cdef class PyCalendar:
     def is_trading_time(self, dt: int):
         return self.c_cal.IsTradingTime(to_time_point(dt))
 
-# cdef class CalendarCTP(PyCalendar):
-#     def __cinit__(self):
-#         self.c_cal = new c_CalendarCTP()
+    def __str__(self) -> str:
+        return self.c_cal.ToString().decode('UTF-8')
 
-#     def __init__(self, int x0, int y0, int x1, int y1):
-#         self.c_rect.x0 = x0
-#         self.c_rect.y0 = y0
-#         self.c_rect.x1 = x1
-#         self.c_rect.y1 = y1
-
-#     def __dealloc__(self):
-#         del self.c_cal
 
 cdef class PyCalendarAstock(PyCalendar):
     def __cinit__(self):
@@ -309,6 +300,23 @@ cdef class PyCalendarAstock(PyCalendar):
     @staticmethod
     def InitData(data):
         CalendarAstock.InitData(data)
+
+    def __str__(self) -> str:
+        return super().__str__()
+
+cdef class PyCalendarCTP(PyCalendar):
+    def __cinit__(self, symbol):
+        self.c_cal = &CalendarCTP.GetInstance(symbol.encode("ascii"))
+
+    def has_night(self) -> bool:
+        return (<CalendarCTP*>self.c_cal).HasNight()
+
+    @staticmethod
+    def InitData(data, sessions):
+        CalendarCTP.InitData(data, move(sessions))
+
+    def __str__(self) -> str:
+        return super().__str__()
 
 # cdef class Time7x24Calendar(Calendar):
 #     def __cinit__(self):
