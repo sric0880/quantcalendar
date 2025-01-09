@@ -60,4 +60,7 @@ int main(int argv, char *args[])
 
   auto const &ctp_cal1 = qmc::CalendarCTP::GetInstance("IH");
   std::cout << ctp_cal1.ToString() << std::endl;
+
+  auto const &cal7x24 = qmc::Time7x24Calendar::GetInstance();
+  std::cout << cal7x24.ToString() << std::endl;
 }

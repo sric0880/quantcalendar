@@ -257,7 +257,7 @@ def test_calendar_ctp(mongo_client, product_id):
             zip(_ctp_get_open_answers[product_id], _ctp_get_close_answers(product_id))
         ),
     ):
-        assert cal.get_open_close_dt(q) == ans
+        assert cal.get_next_open_close(q) == ans
 
 
 def test_calendar_ctp_bartime(mongo_client):

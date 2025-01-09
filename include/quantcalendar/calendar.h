@@ -52,6 +52,7 @@ inline time_point to_time_point(double ts)
 /**
  * 交易日历
  */
+template <class Data>
 class Calendar
 {
 public:
@@ -59,30 +60,8 @@ public:
   Calendar &operator=(const Calendar &) = delete;
   Calendar(Calendar &&rhs) = default;
   Calendar &operator=(Calendar &&rhs) = default;
-  using tradedays_iterator = CalendarData::tradedays_iterator;
-  using month_begin_iterator = CalendarData::month_begin_iterator;
-  using month_end_iterator = CalendarData::month_end_iterator;
-  using week_begin_iterator = CalendarData::week_begin_iterator;
-  using week_end_iterator = CalendarData::week_end_iterator;
-  using weekday_iterator = CalendarData::weekday_iterator;
-  tradedays_iterator TradedaysUpper(sec_t dt) const { return data_.get().TradedaysUpper(dt); }
-  tradedays_iterator TradedaysLower(sec_t dt) const { return data_.get().TradedaysLower(dt); }
-  CalendarData::iter_range<tradedays_iterator> TradedaysBetween(sec_t start, sec_t end) const { return data_.get().TradedaysBetween(start, end); }
-  month_end_iterator MonthEndUpper(sec_t dt) const { return data_.get().MonthEndUpper(dt); }
-  month_end_iterator MonthEndLower(sec_t dt) const { return data_.get().MonthEndLower(dt); }
-  CalendarData::iter_range<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const { return data_.get().MonthEndBetween(start, end); }
-  month_begin_iterator MonthBeginUpper(sec_t dt) const { return data_.get().MonthBeginUpper(dt); }
-  month_begin_iterator MonthBeginLower(sec_t dt) const { return data_.get().MonthBeginLower(dt); }
-  CalendarData::iter_range<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const { return data_.get().MonthBeginBetween(start, end); }
-  week_end_iterator WeekEndUpper(sec_t dt) const { return data_.get().WeekEndUpper(dt); }
-  week_end_iterator WeekEndLower(sec_t dt) const { return data_.get().WeekEndLower(dt); }
-  CalendarData::iter_range<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const { return data_.get().WeekEndBetween(start, end); }
-  week_begin_iterator WeekBeginUpper(sec_t dt) const { return data_.get().WeekBeginUpper(dt); }
-  week_begin_iterator WeekBeginLower(sec_t dt) const { return data_.get().WeekBeginLower(dt); }
-  CalendarData::iter_range<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const { return data_.get().WeekBeginBetween(start, end); }
-  weekday_iterator WeekDayUpper(sec_t dt, int weekday) const { return data_.get().WeekDayUpper(dt, weekday); }
-  weekday_iterator WeekDayLower(sec_t dt, int weekday) const { return data_.get().WeekDayLower(dt, weekday); }
-  CalendarData::iter_range<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const { return data_.get().WeekDayBetween(start, end, weekday); }
+  const Data *data;
+
   void InitSpecialSessions(ankerl::unordered_dense::map<sec_t, std::shared_ptr<SpecialSessions>> &&sessions) noexcept;
   /**
    * 获取某段时间内所有的K线时间，含start，不含end
@@ -144,7 +123,7 @@ protected:
   /// @param tz 时区
   /// @param offset 有些市场交易时间会跨越凌晨0点, offset表示超过0点的时间差, 越过0点表示下一个交易日
   /// @param bartime_right K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间 @todo:  `left`暂未实现
-  Calendar(const CalendarData &data,
+  Calendar(const Data &data,
            std::vector<session_t> &&sessions,
            const std::vector<seconds> &intervals,
            std::string_view tz,
@@ -152,7 +131,6 @@ protected:
            bool bartime_right = true);
 
 private:
-  std::reference_wrapper<const CalendarData> data_;
   std::vector<session_t> sessions_;
   std::vector<int> intervals_;
   std::string tz_;
@@ -171,8 +149,8 @@ private:
 
   void CalcBartimes();
   std::vector<sec_t> GetBartimesImpl(seconds interval, time_point start, size_t count, time_point end) const;
-  void GenerateDailyBartimes(CalendarData::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
-  void GenerateMinuteBartimes(CalendarData::iterator &&it, int interval, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
+  void GenerateDailyBartimes(typename Data::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
+  void GenerateMinuteBartimes(typename Data::iterator &&it, int interval, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
   std::pair<time_point, time_point> ApplyOffset(time_point dt) const;
   const std::vector<session_t> &GetSessionsWithBreaks(sec_t dt) const;
   const std::vector<session_t> &GetSessionsWithoutBreaks(sec_t dt) const;
@@ -182,7 +160,7 @@ private:
   session_t FindNextSession(time_point dt, bool with_breaks) const;
 };
 
-class CalendarAstock : public Calendar
+class CalendarAstock : public Calendar<CalendarData>
 {
 public:
   static void InitData(const std::vector<calendar_item> &data)
@@ -193,11 +171,11 @@ public:
   static const CalendarAstock &GetInstance(const std::string &symbol = "");
 
 private:
-  using Calendar::Calendar;
+  using Calendar<CalendarData>::Calendar;
   static CalendarData calendar_data;
 };
 
-class CalendarCTP : public Calendar
+class CalendarCTP : public Calendar<CalendarData>
 {
 public:
   using session_item = std::tuple<std::string /*product_id*/, std::vector<session_t> /*market time*/>;
@@ -206,9 +184,19 @@ public:
   static const CalendarCTP &GetInstance(const std::string &symbol = "");
 
 private:
-  using Calendar::Calendar;
+  using Calendar<CalendarData>::Calendar;
   static CalendarData calendar_data;
   static ankerl::unordered_dense::map<std::string, CalendarCTP> calendar_ctps;
+};
+
+class Time7x24Calendar : public Calendar<Calendar7x24Data>
+{
+public:
+  static const Time7x24Calendar &GetInstance(const std::string &symbol = "");
+
+private:
+  using Calendar<Calendar7x24Data>::Calendar;
+  static Calendar7x24Data calendar_data;
 };
 
 NS_QMC_END

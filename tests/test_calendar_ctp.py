@@ -5,9 +5,8 @@ from datetime import date, datetime, time, timezone
 import pandas as pd
 import pytest
 import quantdata as qd
-from common import tp, ts
 
-from quantcalendar import CalendarCTP, bar_unit
+from quantcalendar import CalendarCTP, bar_unit, to_seconds, to_timepoint
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -39,12 +38,12 @@ def _ctp_close_time(product_id, year, month, day):
 
 
 _ctp_get_open_close_queries = [
-    tp(2024, 9, 12, 20, 59, 59),
-    tp(2024, 9, 12, 21),
-    tp(2024, 9, 13, 15),
-    tp(2024, 9, 13, 21, 0, 1),
-    tp(2024, 9, 18, 8, 59, 59),
-    tp(2024, 9, 18, 9, 0, 0),
+    to_timepoint(2024, 9, 12, 20, 59, 59),
+    to_timepoint(2024, 9, 12, 21),
+    to_timepoint(2024, 9, 13, 15),
+    to_timepoint(2024, 9, 13, 21, 0, 1),
+    to_timepoint(2024, 9, 18, 8, 59, 59),
+    to_timepoint(2024, 9, 18, 9, 0, 0),
 ]
 
 
@@ -61,28 +60,28 @@ def _ctp_get_close_answers(product_id):
 
 _ctp_get_open_answers = {
     "": [
-        ts(2024, 9, 12, 21),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 21),
+        to_seconds(2024, 9, 12, 21),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 21),
     ],
     "IH": [
-        ts(2024, 9, 13, 9, 30),
-        ts(2024, 9, 13, 9, 30),
-        ts(2024, 9, 18, 9, 30),
-        ts(2024, 9, 18, 9, 30),
-        ts(2024, 9, 18, 9, 30),
-        ts(2024, 9, 18, 9, 30),
+        to_seconds(2024, 9, 13, 9, 30),
+        to_seconds(2024, 9, 13, 9, 30),
+        to_seconds(2024, 9, 18, 9, 30),
+        to_seconds(2024, 9, 18, 9, 30),
+        to_seconds(2024, 9, 18, 9, 30),
+        to_seconds(2024, 9, 18, 9, 30),
     ],
     "AG": [
-        ts(2024, 9, 12, 21),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 9),
-        ts(2024, 9, 18, 21),
+        to_seconds(2024, 9, 12, 21),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 9),
+        to_seconds(2024, 9, 18, 21),
     ],
 }
 
@@ -101,23 +100,23 @@ def test_calendar_ctp(product_id):
     # 2023-06-22 端午节
     # 2024-09-14 中秋节
     # 夜盘
-    assert cal.is_trading(tp(2023, 6, 30)) == (product_id != "IH")
-    assert cal.is_trading(tp(2023, 6, 30, 23, 59, 59)) == (product_id != "IH")
-    assert cal.is_trading(tp(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
-    assert cal.is_trading(tp(2023, 6, 21, 20, 30, 0)) == False
-    assert cal.is_trading(tp(2023, 6, 22)) == False
-    assert cal.is_trading(tp(2024, 9, 13, 21)) == False
+    assert cal.is_trading(to_timepoint(2023, 6, 30)) == (product_id != "IH")
+    assert cal.is_trading(to_timepoint(2023, 6, 30, 23, 59, 59)) == (product_id != "IH")
+    assert cal.is_trading(to_timepoint(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 20, 30, 0)) == False
+    assert cal.is_trading(to_timepoint(2023, 6, 22)) == False
+    assert cal.is_trading(to_timepoint(2024, 9, 13, 21)) == False
 
     # 日盘
-    assert cal.is_trading(tp(2023, 6, 21, 9, 0, 0)) == (product_id != "IH")
-    assert cal.is_trading(tp(2023, 6, 21, 9, 30, 0))
-    assert cal.is_trading(tp(2023, 6, 21, 10, 20, 0)) == (product_id != "AG")
-    assert cal.is_trading(tp(2023, 6, 21, 10, 15, 0))
-    assert cal.is_trading(tp(2023, 6, 21, 10, 30, 0))
-    assert cal.is_trading(tp(2023, 6, 21, 14, 55, 0))
-    assert cal.is_trading(tp(2023, 6, 21, 15, 0, 0))
-    assert cal.is_trading(tp(2023, 6, 22, 9, 0, 0)) == False
-    assert cal.is_trading(tp(2023, 6, 22, 9, 30, 0)) == False
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 9, 0, 0)) == (product_id != "IH")
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 9, 30, 0))
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 10, 20, 0)) == (product_id != "AG")
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 10, 15, 0))
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 10, 30, 0))
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 14, 55, 0))
+    assert cal.is_trading(to_timepoint(2023, 6, 21, 15, 0, 0))
+    assert cal.is_trading(to_timepoint(2023, 6, 22, 9, 0, 0)) == False
+    assert cal.is_trading(to_timepoint(2023, 6, 22, 9, 30, 0)) == False
 
     for q, ans in zip(
         _ctp_get_open_close_queries,
@@ -164,17 +163,17 @@ def test_calendar_ctp_bartime():
             # test bartime
             bartime_testcases = [
                 (
-                    tp(2024, 10, 1),
+                    to_timepoint(2024, 10, 1),
                     _ctp_close_time(product_id, 2024, 10, 8),
                     bar_unit.day,
                 ),
                 (
-                    tp(2024, 10, 6),
+                    to_timepoint(2024, 10, 6),
                     _ctp_close_time(product_id, 2024, 10, 11),
                     bar_unit.week,
                 ),
                 (
-                    tp(2024, 10, 11),
+                    to_timepoint(2024, 10, 11),
                     _ctp_close_time(product_id, 2024, 10, 31),
                     bar_unit.mon,
                 ),

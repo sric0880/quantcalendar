@@ -27,6 +27,14 @@ if(DEFINED SKBUILD)
   find_package(PythonExtensions REQUIRED)
   find_package(Cython REQUIRED)
 
+  # Generate pxi template class
+  set(CALENDAR_DATA_CLASS "CalendarData")
+  set(DEFAULT_COUNT "=2**32-1")
+  configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_CalendarData.pxi")
+  set(CALENDAR_DATA_CLASS "Calendar7x24Data")
+  set(DEFAULT_COUNT "")
+  configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_Calendar7x24Data.pxi")
+
   add_cython_target(_quantcalendar "quantcalendar/_quantcalendar.pyx" CXX)
   add_library(_quantcalendar MODULE "src/calendar.cpp" "src/calendar_data.cpp" ${_quantcalendar})
   target_link_libraries(_quantcalendar
@@ -44,9 +52,9 @@ if(DEFINED SKBUILD)
 else()
   add_library(quantcalendar STATIC "src/calendar.cpp" "src/calendar_data.cpp")
   target_link_libraries(quantcalendar
-    PUBLIC quantdata::qddatetime
-    PUBLIC fmt::fmt
-    PUBLIC unordered_dense::unordered_dense)
+    quantdata::qddatetime
+    fmt::fmt
+    unordered_dense::unordered_dense)
 
   # For CTest
   enable_testing()

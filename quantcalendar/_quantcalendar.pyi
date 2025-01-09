@@ -223,3 +223,10 @@ class PyCalendarCTP(PyCalendar):
     @staticmethod
     def InitData(data, sessions):
         """"""
+
+class PyTime7x24Calendar(PyCalendar):
+    """7 x 24小时不间断交易，比如数字货币
+    开盘和收盘时间都是凌晨0点
+
+    如果需要以开盘或者收盘设置定时任务，只需以其一为锚点
+    """
