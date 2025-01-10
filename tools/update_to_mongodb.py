@@ -3,8 +3,7 @@ from datetime import datetime
 import fire
 import quantdata as qd
 
-from .calendar import DB_NAME_CALENDAR
-from .tools import download_tqsdk, download_tushare
+import download_tqsdk, download_tushare
 
 
 def update(
@@ -28,7 +27,7 @@ def update(
             updating[collection_name] = data
 
     with qd.mongo_connect(host, port, user, password) as mg:
-        db = mg[DB_NAME_CALENDAR]
+        db = mg["quantcalendar"]
         for col, data in updating.items():
             db.drop_collection(col)
             db[col].insert_many(data)

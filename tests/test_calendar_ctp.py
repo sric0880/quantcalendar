@@ -155,7 +155,7 @@ def test_calendar_ctp_bartime():
             cal = CalendarCTP(symbol)
             for q, ans, value in zip(
                 answer.index,
-                answer.map(pd.Timestamp.timestamp),
+                answer.map(lambda x: int(pd.Timestamp.timestamp(x))),
                 answer.index.map(lambda x: cal.get_bartime_next(x.timestamp(), i)),
             ):
                 assert ans == value, f"{pickle_file} {q}: {ans} != {value}"

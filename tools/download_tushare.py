@@ -1,7 +1,5 @@
 import pandas as pd
 
-from quantcalendar_deprecated import calendar_astock
-
 
 def download(token: str):
     import tushare as ts
@@ -17,4 +15,4 @@ def download(token: str):
     df = df.astype({"status": "int8"})
     # print(df)
     # print(df.info())
-    return calendar_astock.CalendarAstock.COLLECTION_NAME, df.to_dict(orient="records")
+    return "cn_stock", df.to_dict(orient="records")

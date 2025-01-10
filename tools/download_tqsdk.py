@@ -4,8 +4,6 @@ from datetime import datetime
 import pandas as pd
 from chinese_calendar import get_holiday_detail
 
-from quantcalendar_deprecated import calendar_ctp
-
 
 def download(tq_username, tq_psw, end_dt):
     from tqsdk import TqApi, TqAuth
@@ -40,7 +38,7 @@ def _download_trade_cal(api, end_dt):
     ), f"{diff_days}不是交易日, 但chinese_calendar包计算是交易日"
     # print(newdf)
     # print(newdf.info())
-    return calendar_ctp.CalendarCTP.COLLECTION_NAME, newdf.to_dict(orient="records")
+    return "cn_future", newdf.to_dict(orient="records")
 
 
 def _download_markettime(api):
@@ -73,7 +71,7 @@ def _download_markettime(api):
             assert sum == sum_new
         else:
             products[row.product_id] = open_period
-    return calendar_ctp.CalendarCTP.COLLECTION_NAME_SESSIONS, [
+    return "cn_future_sessions", [
         {"_id": product_id, "market_time": period}
         for product_id, period in products.items()
     ]
