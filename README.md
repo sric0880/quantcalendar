@@ -19,10 +19,8 @@
 
 ### 依赖项
 
-1. 下载并安装 [quantdata](https://github.com/sric0880/quantdata)
+1. 下载并安装 [quantdata](https://github.com/sric0880/quantdata)，依赖其中的`qddatetime`库，和`qdmongdb`用于测试
 2. 下载并安装 [unordered_dense](https://github.com/martinus/unordered_dense)
-3. 安装依赖[vcpkg](https://learn.microsoft.com/zh-cn/vcpkg/get_started/get-started-vscode?pivots=shell-powershell)
-
 
 ### C++
 
