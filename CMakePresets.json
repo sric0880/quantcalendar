@@ -10,7 +10,7 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
-                "CMAKE_PREFIX_PATH": "C:/Program Files (x86)/mongo-c-driver",
+                "CMAKE_PREFIX_PATH": "C:/Program Files (x86)/mongo-c-driver"
             },
             "condition": {
                 "type": "equals",

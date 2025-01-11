@@ -7,13 +7,16 @@
 - [tqsdk](https://www.shinnytech.com/)
 - [chinese_calendar](https://pypi.org/project/chinesecalendar/)
 
-数据需自行导入数据库。本库测试使用MongoDB。
+***数据需自行整理导入数据库***
+
+本库测试使用MongoDB。使用接口参考测试用例`tests`
 
 ## 特性
 
-- 支持Python和C++(正在开发中...)两种接口
+- 目前支持A股、中国期货、7x24全天候交易日历
+- 支持C++、Python(Cython封装)
 - 支持不同证券品种生成不同交易日历，比如中国期货
-- 支持查询不同周期的K线时间，支持和东方财富期货、新浪期货相同的K线时间
+- 支持查询不同周期的K线时间。支持和东方财富期货、新浪期货相同的K线时间
 
 ## 安装
 
@@ -80,12 +83,11 @@ python .\setup.py build_ext --inplace -G "Visual Studio 17 2022" -- -DCMAKE_BUIL
 
 ## 测试
 
-使用方法见测试用例
-
 ### C++
 
 ```sh
-
+# 添加 -V 打印所有输出
+ctest -T test --test-dir out/build/linux-debug --output-on-failure
 ```
 
 ### Python
@@ -96,3 +98,6 @@ python .\setup.py build_ext --inplace -G "Visual Studio 17 2022" -- -DCMAKE_BUIL
 python -m pytest tests
 ```
 
+## 性能
+
+TODO

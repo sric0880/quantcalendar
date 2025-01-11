@@ -1,4 +1,57 @@
+from datetime import timezone
+
+import pandas as pd
+
 from quantcalendar import Time7x24Calendar, bar_unit, to_seconds, to_timepoint
+
+
+def test_all_tradedays():
+    cal = Time7x24Calendar()
+    # days
+    dates = cal.get_tradedays_gte(to_seconds(2022, 1, 1), 1000)
+    dates_right = (
+        pd.date_range("2022-01-01", periods=1000, freq="D", tz=timezone.utc)
+        .map(pd.Timestamp.timestamp)
+        .to_list()
+    )
+    assert dates == dates_right
+
+    last_date = dates[-1]
+    assert cal.get_tradedays_lte(last_date, 1000) == dates
+
+    # month
+    dates = cal.get_month_ends_gte(to_seconds(2022, 1, 1), 100)
+    dates_right = (
+        pd.date_range("2022-01-31", periods=100, freq="ME", tz=timezone.utc)
+        .map(pd.Timestamp.timestamp)
+        .to_list()
+    )
+    assert dates == dates_right
+
+    # weekdays
+    dates = cal.get_week_days_gte(1, to_seconds(2022, 1, 1), 500)
+    dates1 = cal.get_week_days_gte(7, to_seconds(2022, 1, 1), 500)
+    dates2 = cal.get_week_begins_gte(to_seconds(2022, 1, 1), 500)
+    dates3 = cal.get_week_ends_gte(to_seconds(2022, 1, 1), 500)
+    assert dates == dates2
+    assert dates1 == dates3
+
+    assert cal.get_week_end_next(to_seconds(2021, 12, 31)) == 1641081600
+
+    # Monday
+    dates_right = (
+        pd.date_range("2022-01-01", periods=500, freq="W-MON", tz=timezone.utc)
+        .map(pd.Timestamp.timestamp)
+        .to_list()
+    )
+    assert dates == dates_right
+    # Sunday
+    dates1_right = (
+        pd.date_range("2022-01-01", periods=500, freq="W-SUN", tz=timezone.utc)
+        .map(pd.Timestamp.timestamp)
+        .to_list()
+    )
+    assert dates1 == dates1_right
 
 
 # fmt: off

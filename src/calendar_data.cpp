@@ -259,12 +259,12 @@ inline bool is_leap_year(int year)
   return (year % 100 != 0 && year % 4 == 0) || (year % 400 == 0);
 }
 
-const std::vector<int> month_days{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+const int month_days[]{-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 int num_days_month(int year, int month)
 {
   if (month == 2 && is_leap_year(year))
     return 29;
-  return month_days[month - 1];
+  return month_days[month];
 }
 
 void next_month_end(Date &date)
