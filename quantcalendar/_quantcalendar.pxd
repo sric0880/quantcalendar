@@ -141,14 +141,14 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		const T * data
 		vector[sec_t] GetBartimes(seconds interval, tp start, tp end) except +
 		vector[sec_t] GetBartimes(seconds interval, tp start, size_t count) except +
-		sec_t GetCurrentBartime(tp dt, seconds interval) except +
-		session_t GetNextOpenClose(tp dt)
-		session_t GetNextSession(tp dt)
+		sec_t GetCurrentBartime(seconds interval, tp dt) except +
+		session_t GetNextOpenClose(tp dt) except +
+		session_t GetNextSession(tp dt) except +
 		const vector[session_t] &GetSessions()
 		const vector[session_t] &GetOrderedSessions()
 		const session_t &GetOpenCloseTime()
-		bint IsTrading(tp dt)
-		bint IsTradingDay(tp dt)
+		bint IsTrading(tp dt) except +
+		bint IsTradingDay(tp dt) except +
 		bint IsTradingTime(tp dt)
 		string ToString()
 

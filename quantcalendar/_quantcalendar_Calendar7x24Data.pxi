@@ -246,8 +246,8 @@ cdef class PyCalendar_Calendar7x24Data:
         cdef Calendar7x24Data.weekday_iterator it = self.c_cal.data.WeekDayLower(dt, weekday)
         return None if it.is_end() else deref(it).first
 
-    def get_bartime_next(self, dt: float, interval: int):
-        return self.c_cal.GetCurrentBartime(to_time_point(dt), seconds(interval))
+    def get_bartime_next(self, interval: int, dt: float):
+        return self.c_cal.GetCurrentBartime(seconds(interval), to_time_point(dt))
 
     def get_bartimes_gte(self, interval: int, start: float, count: int):
         # count must cast to <size_t>, otherwise it is PyObject* type and no suitable overloading method found.

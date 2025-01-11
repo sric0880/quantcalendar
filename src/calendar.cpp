@@ -239,10 +239,6 @@ std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point 
   {
     GenerateMinuteBartimes(data->TradedaysUpper(start_day), inte, start, count, end, ret);
   }
-  if (ret.empty())
-  {
-    throw OutOfCalendar();
-  }
   return ret;
 }
 
@@ -292,10 +288,9 @@ template <class Data>
 bool Calendar<Data>::IsTradingDay(time_point dt) const
 {
   dt -= seconds(offset_);
-  sec_t start_day = ToDaily(dt);
   try
   {
-    auto &node = data->At(start_day);
+    auto &node = data->At(to_daily(dt));
     return node.IsTrading();
   }
   catch (std::out_of_range &e)
@@ -489,7 +484,10 @@ void CalendarCTP::InitData(const std::vector<calendar_item> &data, std::vector<s
   for (auto &[product_id, market_time] : sessions)
   {
     uppercase(product_id);
-    calendar_ctps.emplace(product_id, CalendarCTP(calendar_data, std::move(market_time), intervals, tz, offset));
+    sec_t special_offset = 0;
+    if (market_time[0].second <= offset)
+      special_offset = market_time[0].second;
+    calendar_ctps.emplace(product_id, CalendarCTP(calendar_data, std::move(market_time), intervals, tz, special_offset));
   }
   // set special sessions
   // 特殊规则：交易日夜盘不开盘。第二天是节假日，夜盘不交易

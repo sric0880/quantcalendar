@@ -88,7 +88,7 @@ public:
    * @param dt: 当前时间
    * @param interval(seconds): K线间隔周期
    */
-  sec_t GetCurrentBartime(time_point dt, seconds interval) const
+  sec_t GetCurrentBartime(seconds interval, time_point dt) const
   {
     return GetBartimesImpl(interval, dt, 1, time_point::min())[0];
   }
@@ -110,7 +110,9 @@ public:
   const session_t &GetOpenCloseTime() const { return open_close_sessions_[0]; }
   // 判断时间`dt`是否正在交易中, `dt`时间必须是交易所本地时间
   bool IsTrading(time_point dt) const;
-  // 判断是否交易日
+  // 判断是否交易日。如果IsTrading返回true，那么IsTradingDay必然返回true，反过来不一定成立。
+  // 但是当IsTradingDay返回false，那么IsTrading必然返回false。
+  // 比如中国期货白银，周六凌晨1点正在交易，此时IsTradingDay也为true，但是周六实际不是交易日。
   bool IsTradingDay(time_point dt) const;
   // 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
   bool IsTradingTime(time_point dt) const;

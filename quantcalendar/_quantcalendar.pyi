@@ -143,7 +143,7 @@ class PyCalendar:
          - weekday: monday to sunday [1, 7]
          """
 
-    def get_bartime_next(self, dt: float, interval: int) -> int:
+    def get_bartime_next(self, interval: int, dt: float) -> int:
         """ get current bartime, include `dt`
 
         Params:
@@ -202,7 +202,11 @@ class PyCalendar:
         """
 
     def is_trading_day(self, dt: float) -> bool:
-        """ 判断是否交易日 """
+        """
+        判断是否交易日。如果`is_trading`返回true，那么`is_trading_day`必然返回true，反过来不一定成立。
+        但是当`is_trading_day`返回false，那么`is_trading`必然返回false。
+        比如中国期货白银，周六凌晨1点正在交易，此时`is_trading_day`也为true，但是周六实际不是交易日。
+        """
 
     def is_trading_time(self, dt: float) -> bool:
         """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True

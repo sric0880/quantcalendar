@@ -103,6 +103,7 @@ def test_trading_time(product_id):
     assert cal.is_trading(to_timepoint(2023, 6, 30)) == (product_id != "IH")
     assert cal.is_trading(to_timepoint(2023, 6, 30, 23, 59, 59)) == (product_id != "IH")
     assert cal.is_trading(to_timepoint(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
+    assert cal.is_trading_day(to_timepoint(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
     assert cal.is_trading(to_timepoint(2023, 6, 21, 20, 30, 0)) == False
     assert cal.is_trading(to_timepoint(2023, 6, 22)) == False
     assert cal.is_trading(to_timepoint(2024, 9, 13, 21)) == False
@@ -156,7 +157,7 @@ def test_next_bartime():
             for q, ans, value in zip(
                 answer.index,
                 answer.map(lambda x: int(pd.Timestamp.timestamp(x))),
-                answer.index.map(lambda x: cal.get_bartime_next(x.timestamp(), i)),
+                answer.index.map(lambda x: cal.get_bartime_next(i, x.timestamp())),
             ):
                 assert ans == value, f"{pickle_file} {q}: {ans} != {value}"
             print(f"{pickle_file} pass")
@@ -179,7 +180,7 @@ def test_next_bartime():
                 ),
             ]
             for query, answer, interval in bartime_testcases:
-                assert cal.get_bartime_next(query, interval) == answer
+                assert cal.get_bartime_next(interval, query) == answer
 
 
 def hourly_bartimes(year, mon, day):

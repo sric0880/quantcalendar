@@ -85,7 +85,7 @@ def test_next_bartime():
         (to_timepoint(2024, 10, 11), to_seconds(2024, 10, 31, 15), bar_unit.mon),
     ]
     for query, answer, interval in bartime_testcases:
-        assert cal.get_bartime_next(query, interval) == answer
+        assert cal.get_bartime_next(interval, query) == answer
 
 
 def test_get_bartimes():
