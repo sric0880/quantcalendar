@@ -151,7 +151,7 @@ private:
   std::vector<sec_t> GetBartimesImpl(seconds interval, time_point start, size_t count, time_point end) const;
   void GenerateDailyBartimes(typename Data::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
   void GenerateMinuteBartimes(typename Data::iterator &&it, int interval, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const;
-  std::pair<time_point, time_point> ApplyOffset(time_point dt) const;
+  sec_t ToDaily(const time_point &applied_offset_dt) const;
   const std::vector<session_t> &GetSessionsWithBreaks(sec_t dt) const;
   const std::vector<session_t> &GetSessionsWithoutBreaks(sec_t dt) const;
   sec_t CombineDatetime(sec_t tradingday, sec_t time) const;

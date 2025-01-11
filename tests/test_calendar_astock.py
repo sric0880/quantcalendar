@@ -16,7 +16,7 @@ def mongo_client():
 
 
 # fmt: off
-def test_get_tradedays():
+def test_tradedays():
     cal = CalendarAstock()
     assert cal.get_tradedays_gte(to_seconds(2023, 6, 30))[0] == to_seconds(2023, 6, 30)
     assert cal.get_tradeday_next(to_seconds(2023, 6, 30)) == to_seconds(2023, 6, 30)
@@ -56,7 +56,7 @@ def test_get_tradedays():
     assert cal.get_week_days_gte(3, to_seconds(2024, 2, 7), count=3) == week_days
 
 
-def test_bartimes():
+def test_trading_time():
     cal = CalendarAstock()
     assert cal.is_trading(to_timepoint(2024, 9, 20, 9, 0)) == False
     assert cal.is_trading(to_timepoint(2024, 9, 20, 9, 30)) == True
@@ -69,6 +69,10 @@ def test_bartimes():
     assert cal.get_next_open_close(to_timepoint(2024, 9, 13)) == (to_seconds(2024, 9, 13, 9, 30), to_seconds(2024, 9, 13, 15))
     assert cal.get_next_open_close(to_timepoint(2024, 9, 14)) == (to_seconds(2024, 9, 18, 9, 30), to_seconds(2024, 9, 18, 15))
     assert cal.get_next_open_close(to_timepoint(2024, 9, 18, 10)) == (to_seconds(2024, 9, 19, 9, 30), to_seconds(2024, 9, 18, 15))
+
+
+def test_next_bartime():
+    cal = CalendarAstock()
     bartime_testcases = [
         (to_timepoint(2024, 9, 20, 15), to_seconds(2024, 9, 20, 15), 60),
         (to_timepoint(2024, 9, 20, 15, 0, 1), to_seconds(2024, 9, 23, 9, 31), 60),
@@ -82,3 +86,39 @@ def test_bartimes():
     ]
     for query, answer, interval in bartime_testcases:
         assert cal.get_bartime_next(query, interval) == answer
+
+
+def test_get_bartimes():
+    cal = CalendarAstock()
+    bartimes = cal.get_bartimes_gte(bar_unit.mon, to_timepoint(2024, 9, 13), count=2)
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 31, 15)
+
+    # 2024年9月30这周只有一天交易日，是周初，也是周末
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_timepoint(2024, 9, 30), count=2)
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 11, 15)
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_timepoint(2024, 10, 1), count=2)
+    assert bartimes[0] == to_seconds(2024, 10, 11, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 18, 15)
+
+    bartimes = cal.get_bartimes_gte(bar_unit.day, to_timepoint(2024, 9, 30), count=30)
+    assert len(bartimes) == 30
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 8, 15)
+
+    bartimes = cal.get_bartimes_between(30*bar_unit.min, to_timepoint(2024, 9, 13), to_timepoint(2024, 9, 14))
+    assert len(bartimes) == 8
+    assert bartimes[0] == to_seconds(2024, 9, 13, 10)
+    assert bartimes[1] == to_seconds(2024, 9, 13, 10, 30)
+    assert bartimes[2] == to_seconds(2024, 9, 13, 11)
+    assert bartimes[3] == to_seconds(2024, 9, 13, 11, 30)
+    assert bartimes[4] == to_seconds(2024, 9, 13, 13, 30)
+    assert bartimes[5] == to_seconds(2024, 9, 13, 14)
+    assert bartimes[6] == to_seconds(2024, 9, 13, 14, 30)
+    assert bartimes[7] == to_seconds(2024, 9, 13, 15)
+
+    bartimes = cal.get_bartimes_between(2*bar_unit.hour, to_timepoint(2024, 9, 13, 9, 30), to_timepoint(2024, 9, 14))
+    assert len(bartimes) == 2
+    assert bartimes[0] == to_seconds(2024, 9, 13, 11, 30)
+    assert bartimes[1] == to_seconds(2024, 9, 13, 15)

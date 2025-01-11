@@ -94,7 +94,7 @@ def test_has_night():
 
 # fmt: off
 @pytest.mark.parametrize("product_id", ["", "IH", "AG"])
-def test_calendar_ctp(product_id):
+def test_trading_time(product_id):
     cal = CalendarCTP(product_id)
     print(cal)
     # 2023-06-22 端午节
@@ -136,7 +136,7 @@ def to_product_id(symbol: str):
     return symbol[:i]
 
 
-def test_calendar_ctp_bartime():
+def test_next_bartime():
     path = "tests/bartime_answers"
 
     for pickle_file in os.listdir(path):
@@ -182,4 +182,55 @@ def test_calendar_ctp_bartime():
                 assert cal.get_bartime_next(query, interval) == answer
 
 
-# fmt: on
+def hourly_bartimes(year, mon, day):
+    return [
+        to_seconds(year, mon, day),
+        to_seconds(year, mon, day, 1),
+        to_seconds(year, mon, day, 2),
+        to_seconds(year, mon, day, 9, 30),
+        to_seconds(year, mon, day, 10, 45),
+        to_seconds(year, mon, day, 13, 45),
+        to_seconds(year, mon, day, 14, 45),
+        to_seconds(year, mon, day, 15),
+        to_seconds(year, mon, day, 22),
+        to_seconds(year, mon, day, 23) ]
+
+def test_get_bartimes():
+    cal = CalendarCTP("")
+    bartimes = cal.get_bartimes_gte(bar_unit.mon, to_timepoint(2024, 9, 13), count=2)
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 31, 15, 15)
+
+    # 2024年9月30这周只有一天交易日，是周初，也是周末
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_timepoint(2024, 9, 30), count=2)
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 11, 15, 15)
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_timepoint(2024, 10, 1), count=2)
+    assert bartimes[0] == to_seconds(2024, 10, 11, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 18, 15, 15)
+
+    bartimes = cal.get_bartimes_gte(bar_unit.day, to_timepoint(2024, 9, 30), count=30)
+    assert len(bartimes) == 30
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 8, 15, 15)
+
+    cal = CalendarCTP("ag")
+    # 周4
+    bartimes = cal.get_bartimes_between(bar_unit.hour, to_timepoint(2024, 9, 12), to_timepoint(2024, 9, 13))
+    assert bartimes == hourly_bartimes(2024, 9, 12)
+
+    # 周五
+    bartimes = cal.get_bartimes_between(bar_unit.hour, to_timepoint(2024, 9, 13), to_timepoint(2024, 9, 14))
+    assert bartimes == hourly_bartimes(2024, 9, 13)[:-2]
+
+    # 周一
+    bartimes = cal.get_bartimes_between(bar_unit.hour, to_timepoint(2024, 9, 23), to_timepoint(2024, 9, 24))
+    assert bartimes == hourly_bartimes(2024, 9, 23)[3:]
+
+    # 跨越国庆节
+    bartimes = cal.get_bartimes_between(4*bar_unit.hour, to_timepoint(2024, 9, 30), to_timepoint(2024, 10, 9))
+    assert len(bartimes) == 4
+    assert bartimes[0] == to_seconds(2024, 9, 30, 13, 45)
+    assert bartimes[1] == to_seconds(2024, 9, 30, 15)
+    assert bartimes[2] == to_seconds(2024, 10, 8, 13, 45)
+    assert bartimes[3] == to_seconds(2024, 10, 8, 15)

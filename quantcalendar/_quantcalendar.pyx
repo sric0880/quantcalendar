@@ -42,7 +42,7 @@ cdef class PyTime7x24Calendar(PyCalendar_Calendar7x24Data):
     def is_trading_day(self, dt: float):
         return True
 
-    def is_trading_time(self, dt: int):
+    def is_trading_time(self, dt: float):
         return True
 
     def __str__(self) -> str:

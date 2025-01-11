@@ -93,14 +93,12 @@ Calendar<Data>::Calendar(
 }
 
 template <class Data>
-std::pair<time_point, time_point> Calendar<Data>::ApplyOffset(time_point dt) const
+inline sec_t Calendar<Data>::ToDaily(const time_point &applied_offset_dt) const
 {
-  dt -= seconds(offset_);
-  auto trading_day = dt;
   // 凌晨时刻判断交易日属于前一天还是后一天
-  if (is_daily(dt) && bartime_right_)
-    trading_day -= seconds_a_day;
-  return {dt, trading_day};
+  if (is_daily(applied_offset_dt) && bartime_right_)
+    return to_daily(applied_offset_dt - seconds_a_day);
+  return to_daily(applied_offset_dt);
 }
 
 template <class Data>
@@ -212,23 +210,25 @@ void Calendar<Data>::GenerateMinuteBartimes(typename Data::iterator &&it, int in
 template <class Data>
 std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point start, size_t count, time_point end) const
 {
-  // @TODO: end 没有apply offset
   int inte = interval.count();
-  auto &&[start_dt, start_day] = ApplyOffset(start);
+  seconds offset(offset_);
+  start -= offset;
+  end -= offset;
+  sec_t start_day = ToDaily(start);
   std::vector<sec_t> ret;
   if (!bartimes_.contains(inte))
   {
     if (interval == 1_d)
     {
-      GenerateDailyBartimes(data->TradedaysUpper(to_daily(start_day)), start_dt, count, end, ret);
+      GenerateDailyBartimes(data->TradedaysUpper(start_day), start, count, end, ret);
     }
     else if (interval == 1_w)
     {
-      GenerateDailyBartimes(data->WeekEndUpper(to_daily(start_day)), start_dt, count, end, ret);
+      GenerateDailyBartimes(data->WeekEndUpper(start_day), start, count, end, ret);
     }
     else if (interval == 1_m)
     {
-      GenerateDailyBartimes(data->MonthEndUpper(to_daily(start_day)), start_dt, count, end, ret);
+      GenerateDailyBartimes(data->MonthEndUpper(start_day), start, count, end, ret);
     }
     else
     {
@@ -237,7 +237,7 @@ std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point 
   }
   else
   {
-    GenerateMinuteBartimes(data->TradedaysUpper(to_daily(start_day)), inte, start_dt, count, end, ret);
+    GenerateMinuteBartimes(data->TradedaysUpper(start_day), inte, start, count, end, ret);
   }
   if (ret.empty())
   {
@@ -249,10 +249,11 @@ std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point 
 template <class Data>
 session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
 {
-  auto &&[start_dt, start_day] = ApplyOffset(dt);
+  dt -= seconds(offset_);
+  sec_t start_day = ToDaily(dt);
   sec_t next_sos_dt = -1;
   sec_t next_eos_dt = -1;
-  auto it = data->TradedaysUpper(to_daily(start_day));
+  auto it = data->TradedaysUpper(start_day);
   do
   {
     sec_t day = (*it).first;
@@ -262,13 +263,13 @@ session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
       if (next_sos_dt == -1 && sos != -1)
       {
         auto session_start = CombineDatetimeSos(day, sos);
-        if (start_dt < system_clock::from_time_t(session_start))
+        if (dt < system_clock::from_time_t(session_start))
           next_sos_dt = session_start;
       }
       if (next_eos_dt == -1 && eos != -1)
       {
         auto session_end = CombineDatetime(day, eos);
-        if (start_dt <= system_clock::from_time_t(session_end))
+        if (dt <= system_clock::from_time_t(session_end))
           next_eos_dt = session_end;
       }
     }
@@ -290,10 +291,11 @@ bool Calendar<Data>::IsTrading(time_point dt) const
 template <class Data>
 bool Calendar<Data>::IsTradingDay(time_point dt) const
 {
-  auto start_day = ApplyOffset(dt).second;
+  dt -= seconds(offset_);
+  sec_t start_day = ToDaily(dt);
   try
   {
-    auto &node = data->At(to_daily(start_day));
+    auto &node = data->At(start_day);
     return node.IsTrading();
   }
   catch (std::out_of_range &e)

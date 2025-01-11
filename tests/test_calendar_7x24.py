@@ -5,7 +5,8 @@ import pandas as pd
 from quantcalendar import Time7x24Calendar, bar_unit, to_seconds, to_timepoint
 
 
-def test_all_tradedays():
+# fmt: off
+def test_tradedays():
     cal = Time7x24Calendar()
     # days
     dates = cal.get_tradedays_gte(to_seconds(2022, 1, 1), 1000)
@@ -53,10 +54,6 @@ def test_all_tradedays():
     )
     assert dates1 == dates1_right
 
-
-# fmt: off
-def test_get_tradedays():
-    cal = Time7x24Calendar()
     assert cal.get_tradedays_lte(to_seconds(2024, 9, 13, 1), 2) == []
     assert cal.get_tradedays_lte(to_seconds(2024, 9, 13), 2) == [to_seconds(2024, 9, 12), to_seconds(2024, 9, 13)]
     assert cal.get_tradedays_between(to_seconds(2024, 9, 13), to_seconds(2024, 9, 13)) == [to_seconds(2024, 9, 13)]
@@ -84,7 +81,14 @@ def test_get_tradedays():
     assert cal.get_week_days_gte(3, to_seconds(2023, 12, 27), 3) == week_days
 
 
-def test_bartimes():
+def test_trading_time():
+    cal = Time7x24Calendar()
+    assert cal.is_trading(to_timepoint(2023, 1, 1))
+    assert cal.is_trading_day(to_timepoint(2023, 1, 1))
+    assert cal.is_trading_time(to_timepoint(2023, 1, 1))
+
+
+def test_next_bartime():
     cal = Time7x24Calendar()
     bartime_testcases = [
         (to_timepoint(2024, 9, 13), to_seconds(2024, 9, 13), 60),
@@ -110,6 +114,9 @@ def test_bartimes():
     for query, answer, interval in bartime_testcases:
         assert cal.get_bartime_next(query, interval) == answer
 
+
+def test_get_bartimes():
+    cal = Time7x24Calendar()
     bartimes = cal.get_bartimes_gte(bar_unit.mon, to_timepoint(2024, 9, 13), count=20)
     assert bartimes[0] == to_seconds(2024, 10, 1)
     assert bartimes[1] == to_seconds(2024, 11, 1)
@@ -122,7 +129,7 @@ def test_bartimes():
     assert bartimes[0] == to_seconds(2024, 9, 13)
     assert bartimes[-1] == to_seconds(2024, 10, 2)
 
-    bartimes = cal.get_bartimes_between(1800, to_timepoint(2024, 9, 13, 1, 0, 1), to_timepoint(2024, 9, 14))
+    bartimes = cal.get_bartimes_between(30*bar_unit.min, to_timepoint(2024, 9, 13, 1, 0, 1), to_timepoint(2024, 9, 14))
     assert bartimes[0] == to_seconds(2024, 9, 13, 1, 30)
 
     bartimes = cal.get_bartimes_between(4*bar_unit.hour, to_timepoint(2024, 9, 13), to_timepoint(2024, 9, 14))
