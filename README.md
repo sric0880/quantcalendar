@@ -14,7 +14,7 @@
 ## 特性
 
 - 目前支持A股、中国期货、7x24全天候交易日历
-- 支持C++、Python(Cython封装)
+- 支持C++、Python(Cython封装)，相比纯Python实现的版本，性能提升5-50倍（不同接口不同）
 - 支持不同证券品种生成不同交易日历，比如中国期货
 - 支持查询不同周期的K线时间。支持和东方财富期货、新浪期货相同的K线时间
 
@@ -97,7 +97,3 @@ ctest -T test --test-dir out/build/linux-debug --output-on-failure
 ```sh
 python -m pytest tests
 ```
-
-## 性能
-
-TODO
