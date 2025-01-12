@@ -14,7 +14,7 @@ using namespace std::literals::chrono_literals;
 using datetime = Datetime<>;
 using calendar_date = IsoCalendarDate;
 using sec_t = seconds::rep;
-using calendar_item = std::tuple<sec_t /*timestamp*/, char /*status*/>;
+using date_status_item = std::tuple<sec_t /*timestamp*/, char /*status*/>;
 template <class Iter>
 using dpair = std::pair<Iter, Iter>;
 
@@ -41,9 +41,9 @@ inline bool is_daily(sec_t dt)
   return dt % iseconds_a_day == 0;
 }
 
-struct CalendarDataNode
+struct DateNode
 {
-  CalendarDataNode(sec_t ts, uint8_t status) : dt_(datetime::precision(ts)), cdate_(dt_.date.isocalendar()), status_(status)
+  DateNode(sec_t ts, uint8_t status) : dt_(datetime::precision(ts)), cdate_(dt_.date.isocalendar()), status_(status)
   {
     SetTrading(status == 1);
   }
@@ -64,18 +64,18 @@ struct CalendarDataNode
   void SetWeekEnd(bool on) const { state_[4] = on; }
 };
 
-class CalendarData
+class DatesArray
 {
 public:
-  using calendar_data_map = ankerl::unordered_dense::map<sec_t, CalendarDataNode>;
+  using calendar_data_map = ankerl::unordered_dense::map<sec_t, DateNode>;
   using const_map_iterator = calendar_data_map::value_container_type::const_iterator;
   class iterator
   {
   protected:
     const_map_iterator it_;
-    const CalendarData *data_;
-    const const_map_iterator &rend() const { return data_->rend_; };
-    const const_map_iterator &end() const { return data_->end_; };
+    const DatesArray *arr_;
+    const const_map_iterator &rend() const { return arr_->rend_; };
+    const const_map_iterator &end() const { return arr_->end_; };
 
   public:
     // iterator traits
@@ -85,7 +85,7 @@ public:
     using reference = const_map_iterator::reference;
     using iterator_category = std::bidirectional_iterator_tag;
     iterator() = default;
-    iterator(const_map_iterator &&it, const CalendarData *data) : it_(std::move(it)), data_(data) {}
+    iterator(const_map_iterator &&it, const DatesArray *container) : it_(std::move(it)), arr_(container) {}
     iterator(const iterator &) = default;
     iterator &operator=(const iterator &iter) = default;
     bool operator==(const iterator &other) const { return it_ == other.it_; }
@@ -148,7 +148,7 @@ public:
     weekday_iterator() = default;
     weekday_iterator(const weekday_iterator &) = default;
     weekday_iterator &operator=(const weekday_iterator &iter) = default;
-    weekday_iterator(const_map_iterator &&it, const CalendarData *data, int weekday) : iterator(std::move(it), data), weekday_(weekday) {}
+    weekday_iterator(const_map_iterator &&it, const DatesArray *container, int weekday) : iterator(std::move(it), container), weekday_(weekday) {}
     weekday_iterator &operator++() final override;
     weekday_iterator &operator--() final override;
 
@@ -156,10 +156,10 @@ public:
     int weekday_;
   };
 
-  void InitData(const std::vector<calendar_item> &calendar_data);
-  tradedays_iterator TradedaysUpper(sec_t dt) const;
-  tradedays_iterator TradedaysLower(sec_t dt) const;
-  dpair<tradedays_iterator> TradedaysBetween(sec_t start, sec_t end) const { return {TradedaysUpper(start), TradedaysLower(end)}; };
+  void Init(const std::vector<date_status_item> &arr);
+  tradedays_iterator Upper(sec_t dt) const;
+  tradedays_iterator Lower(sec_t dt) const;
+  dpair<tradedays_iterator> Between(sec_t start, sec_t end) const { return {Upper(start), Lower(end)}; };
   month_end_iterator MonthEndUpper(sec_t dt) const;
   month_end_iterator MonthEndLower(sec_t dt) const;
   dpair<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const { return {MonthEndUpper(start), MonthEndLower(end)}; };
@@ -175,7 +175,7 @@ public:
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const;
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const;
   dpair<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const { return {WeekDayUpper(start, weekday), WeekDayLower(end, weekday)}; };
-  const CalendarDataNode &At(sec_t dt) const { return calendar_data_.at(dt); };
+  const DateNode &At(sec_t dt) const { return calendar_data_.at(dt); };
   const_map_iterator cbegin() const { return calendar_data_.cbegin(); }
   const_map_iterator cend() const { return calendar_data_.cend(); }
 
@@ -193,9 +193,9 @@ private:
 
 int num_days_month(int year, int month);
 
-struct Calendar7x24DataNode
+struct AllDayTradingNode
 {
-  Calendar7x24DataNode(sec_t ts) : dt_(datetime::precision(ts)), cdate_(dt_.date.isocalendar()) {}
+  AllDayTradingNode(sec_t ts) : dt_(datetime::precision(ts)), cdate_(dt_.date.isocalendar()) {}
   datetime dt_;
   calendar_date cdate_;
   bool IsTrading() const { return true; };
@@ -206,7 +206,7 @@ struct Calendar7x24DataNode
   bool IsWeekDay(int weekday) const { return cdate_.weekday == weekday; };
 };
 
-class Calendar7x24Data
+class Date7x24Array
 {
 public:
   class iterator
@@ -214,12 +214,12 @@ public:
   public:
     // iterator traits
     using difference_type = long;
-    using value_type = std::pair<sec_t, Calendar7x24DataNode>;
+    using value_type = std::pair<sec_t, AllDayTradingNode>;
     using pointer = value_type *;
     using reference = value_type &;
     using iterator_category = std::bidirectional_iterator_tag;
-    iterator() : current_{-1, Calendar7x24DataNode(0)} {} // for end iterator
-    iterator(sec_t dt) : current_{dt, Calendar7x24DataNode(dt)} {}
+    iterator() : current_{-1, AllDayTradingNode(0)} {} // for end iterator
+    iterator(sec_t dt) : current_{dt, AllDayTradingNode(dt)} {}
     iterator(const iterator &) = default;
     iterator &operator=(const iterator &iter) = default;
     bool operator==(const iterator &other) const { return current_.first == other.current_.first; }
@@ -234,7 +234,7 @@ public:
     const value_type *operator->() const { return &current_; }
     bool is_end() const { return current_.first == -1; }
 
-    friend Calendar7x24Data;
+    friend Date7x24Array;
 
   protected:
     value_type current_;
@@ -280,9 +280,9 @@ public:
   using week_begin_iterator = weekday_iterator;
   using week_end_iterator = weekday_iterator;
 
-  tradedays_iterator TradedaysUpper(sec_t dt) const { return SafeFind<Calendar7x24Data::tradedays_iterator>(dt); }
-  tradedays_iterator TradedaysLower(sec_t dt) const { return TradedaysUpper(dt); };
-  dpair<tradedays_iterator> TradedaysBetween(sec_t start, sec_t end) const { return {TradedaysUpper(start), TradedaysLower(end)}; };
+  tradedays_iterator Upper(sec_t dt) const { return SafeFind<Date7x24Array::tradedays_iterator>(dt); }
+  tradedays_iterator Lower(sec_t dt) const { return Upper(dt); };
+  dpair<tradedays_iterator> Between(sec_t start, sec_t end) const { return {Upper(start), Lower(end)}; };
   month_end_iterator MonthEndUpper(sec_t dt) const;
   month_end_iterator MonthEndLower(sec_t dt) const;
   dpair<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const { return {MonthEndUpper(start), MonthEndLower(end)}; };

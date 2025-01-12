@@ -214,7 +214,7 @@ class PyCalendar:
 
 class PyCalendarAstock(PyCalendar):
     @staticmethod
-    def InitData(data):
+    def Init(dates_arr):
         """"""
 
 class PyCalendarCTP(PyCalendar):
@@ -225,7 +225,7 @@ class PyCalendarCTP(PyCalendar):
         """是否又夜盘交易"""
 
     @staticmethod
-    def InitData(data, sessions):
+    def Init(dates_arr, sessions):
         """"""
 
 class PyTime7x24Calendar(PyCalendar):

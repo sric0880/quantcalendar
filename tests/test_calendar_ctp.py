@@ -14,10 +14,10 @@ def mongo_client():
     conn = qd.mongo_connect("127.0.0.1", tz_aware=True)  # utc
     print("connect mongodb")
     days = qd.mongo_get_data(conn["quantcalendar"], "cn_future")
-    data = [(int(day["_id"].timestamp()), day["status"]) for day in days]
+    dates_arr = [(int(day["_id"].timestamp()), day["status"]) for day in days]
     sessions = qd.mongo_get_data(conn["quantcalendar"], "cn_future_sessions")
     sessions = [(s["_id"].encode("ascii"), s["market_time"]) for s in sessions]
-    CalendarCTP.InitData(data, sessions)
+    CalendarCTP.Init(dates_arr, sessions)
     qd.mongo_close(conn)
     print("disconnect mongodb")
 

@@ -7,23 +7,23 @@ from cython.operator cimport preincrement, predecrement
 from cython.operator cimport dereference as deref
 from libcpp.pair cimport pair
 
-from ._quantcalendar cimport Calendar, seconds, to_time_point, CalendarData
+from ._quantcalendar cimport Calendar, seconds, to_time_point, Date7x24Array
 
-cdef class PyCalendar_CalendarData:
-    cdef const Calendar[CalendarData]* c_cal
+cdef class PyCalendar_Date7x24Array:
+    cdef const Calendar[Date7x24Array]* c_cal
 
-    def get_tradedays_gte(self, dt: int, count: int=2**32-1):
+    def get_tradedays_gte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.tradedays_iterator it = self.c_cal.data.TradedaysUpper(dt)
+        cdef Date7x24Array.tradedays_iterator it = self.c_cal.tradedays.Upper(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
             count -= 1
         return ret
 
-    def get_tradedays_lte(self, dt: int, count: int=2**32-1):
+    def get_tradedays_lte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.tradedays_iterator it = self.c_cal.data.TradedaysLower(dt)
+        cdef Date7x24Array.tradedays_iterator it = self.c_cal.tradedays.Lower(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -35,7 +35,7 @@ cdef class PyCalendar_CalendarData:
         ret = []
         if (start > end):
             return ret
-        cdef pair[CalendarData.tradedays_iterator, CalendarData.tradedays_iterator] p = self.c_cal.data.TradedaysBetween(start, end)
+        cdef pair[Date7x24Array.tradedays_iterator, Date7x24Array.tradedays_iterator] p = self.c_cal.tradedays.Between(start, end)
         if (p.first.is_end() or p.second.is_end()):
             return ret
         while (p.first <= p.second):
@@ -44,25 +44,25 @@ cdef class PyCalendar_CalendarData:
         return ret
 
     def get_tradeday_next(self, dt: int):
-        cdef CalendarData.tradedays_iterator it = self.c_cal.data.TradedaysUpper(dt)
+        cdef Date7x24Array.tradedays_iterator it = self.c_cal.tradedays.Upper(dt)
         return None if it.is_end() else deref(it).first
 
     def get_tradeday_last(self, dt: int):
-        cdef CalendarData.tradedays_iterator it = self.c_cal.data.TradedaysLower(dt)
+        cdef Date7x24Array.tradedays_iterator it = self.c_cal.tradedays.Lower(dt)
         return None if it.is_end() else deref(it).first
 
-    def get_month_ends_gte(self, dt: int, count: int=2**32-1):
+    def get_month_ends_gte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.month_end_iterator it = self.c_cal.data.MonthEndUpper(dt)
+        cdef Date7x24Array.month_end_iterator it = self.c_cal.tradedays.MonthEndUpper(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
             count -= 1
         return ret
 
-    def get_month_ends_lte(self, dt: int, count: int=2**32-1):
+    def get_month_ends_lte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.month_end_iterator it = self.c_cal.data.MonthEndLower(dt)
+        cdef Date7x24Array.month_end_iterator it = self.c_cal.tradedays.MonthEndLower(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -74,7 +74,7 @@ cdef class PyCalendar_CalendarData:
         ret = []
         if (start > end):
             return ret
-        cdef pair[CalendarData.month_end_iterator, CalendarData.month_end_iterator] p = self.c_cal.data.MonthEndBetween(start, end)
+        cdef pair[Date7x24Array.month_end_iterator, Date7x24Array.month_end_iterator] p = self.c_cal.tradedays.MonthEndBetween(start, end)
         if (p.first.is_end() or p.second.is_end()):
             return ret
         while (p.first <= p.second):
@@ -83,25 +83,25 @@ cdef class PyCalendar_CalendarData:
         return ret
 
     def get_month_end_next(self, dt: int):
-        cdef CalendarData.month_end_iterator it = self.c_cal.data.MonthEndUpper(dt)
+        cdef Date7x24Array.month_end_iterator it = self.c_cal.tradedays.MonthEndUpper(dt)
         return None if it.is_end() else deref(it).first
 
     def get_month_end_last(self, dt: int):
-        cdef CalendarData.month_end_iterator it = self.c_cal.data.MonthEndLower(dt)
+        cdef Date7x24Array.month_end_iterator it = self.c_cal.tradedays.MonthEndLower(dt)
         return None if it.is_end() else deref(it).first
 
-    def get_month_begins_gte(self, dt: int, count: int=2**32-1):
+    def get_month_begins_gte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.month_begin_iterator it = self.c_cal.data.MonthBeginUpper(dt)
+        cdef Date7x24Array.month_begin_iterator it = self.c_cal.tradedays.MonthBeginUpper(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
             count -= 1
         return ret
 
-    def get_month_begins_lte(self, dt: int, count: int=2**32-1):
+    def get_month_begins_lte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.month_begin_iterator it = self.c_cal.data.MonthBeginLower(dt)
+        cdef Date7x24Array.month_begin_iterator it = self.c_cal.tradedays.MonthBeginLower(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -113,7 +113,7 @@ cdef class PyCalendar_CalendarData:
         ret = []
         if (start > end):
             return ret
-        cdef pair[CalendarData.month_begin_iterator, CalendarData.month_begin_iterator] p = self.c_cal.data.MonthBeginBetween(start, end)
+        cdef pair[Date7x24Array.month_begin_iterator, Date7x24Array.month_begin_iterator] p = self.c_cal.tradedays.MonthBeginBetween(start, end)
         if (p.first.is_end() or p.second.is_end()):
             return ret
         while (p.first <= p.second):
@@ -122,25 +122,25 @@ cdef class PyCalendar_CalendarData:
         return ret
 
     def get_month_begin_next(self, dt: int):
-        cdef CalendarData.month_begin_iterator it = self.c_cal.data.MonthBeginUpper(dt)
+        cdef Date7x24Array.month_begin_iterator it = self.c_cal.tradedays.MonthBeginUpper(dt)
         return None if it.is_end() else deref(it).first
 
     def get_month_begin_last(self, dt: int):
-        cdef CalendarData.month_begin_iterator it = self.c_cal.data.MonthBeginLower(dt)
+        cdef Date7x24Array.month_begin_iterator it = self.c_cal.tradedays.MonthBeginLower(dt)
         return None if it.is_end() else deref(it).first
 
-    def get_week_ends_gte(self, dt: int, count: int=2**32-1):
+    def get_week_ends_gte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.week_end_iterator it = self.c_cal.data.WeekEndUpper(dt)
+        cdef Date7x24Array.week_end_iterator it = self.c_cal.tradedays.WeekEndUpper(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
             count -= 1
         return ret
 
-    def get_week_ends_lte(self, dt: int, count: int=2**32-1):
+    def get_week_ends_lte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.week_end_iterator it = self.c_cal.data.WeekEndLower(dt)
+        cdef Date7x24Array.week_end_iterator it = self.c_cal.tradedays.WeekEndLower(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -152,7 +152,7 @@ cdef class PyCalendar_CalendarData:
         ret = []
         if (start > end):
             return ret
-        cdef pair[CalendarData.week_end_iterator, CalendarData.week_end_iterator] p = self.c_cal.data.WeekEndBetween(start, end)
+        cdef pair[Date7x24Array.week_end_iterator, Date7x24Array.week_end_iterator] p = self.c_cal.tradedays.WeekEndBetween(start, end)
         if (p.first.is_end() or p.second.is_end()):
             return ret
         while (p.first <= p.second):
@@ -161,25 +161,25 @@ cdef class PyCalendar_CalendarData:
         return ret
 
     def get_week_end_next(self, dt: int):
-        cdef CalendarData.week_end_iterator it = self.c_cal.data.WeekEndUpper(dt)
+        cdef Date7x24Array.week_end_iterator it = self.c_cal.tradedays.WeekEndUpper(dt)
         return None if it.is_end() else deref(it).first
 
     def get_week_end_last(self, dt: int):
-        cdef CalendarData.week_end_iterator it = self.c_cal.data.WeekEndLower(dt)
+        cdef Date7x24Array.week_end_iterator it = self.c_cal.tradedays.WeekEndLower(dt)
         return None if it.is_end() else deref(it).first
 
-    def get_week_begins_gte(self, dt: int, count: int=2**32-1):
+    def get_week_begins_gte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.week_begin_iterator it = self.c_cal.data.WeekBeginUpper(dt)
+        cdef Date7x24Array.week_begin_iterator it = self.c_cal.tradedays.WeekBeginUpper(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
             count -= 1
         return ret
 
-    def get_week_begins_lte(self, dt: int, count: int=2**32-1):
+    def get_week_begins_lte(self, dt: int, count: int):
         ret = []
-        cdef CalendarData.week_begin_iterator it = self.c_cal.data.WeekBeginLower(dt)
+        cdef Date7x24Array.week_begin_iterator it = self.c_cal.tradedays.WeekBeginLower(dt)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -191,7 +191,7 @@ cdef class PyCalendar_CalendarData:
         ret = []
         if (start > end):
             return ret
-        cdef pair[CalendarData.week_begin_iterator, CalendarData.week_begin_iterator] p = self.c_cal.data.WeekBeginBetween(start, end)
+        cdef pair[Date7x24Array.week_begin_iterator, Date7x24Array.week_begin_iterator] p = self.c_cal.tradedays.WeekBeginBetween(start, end)
         if (p.first.is_end() or p.second.is_end()):
             return ret
         while (p.first <= p.second):
@@ -200,25 +200,25 @@ cdef class PyCalendar_CalendarData:
         return ret
 
     def get_week_begin_next(self, dt: int):
-        cdef CalendarData.week_begin_iterator it = self.c_cal.data.WeekBeginUpper(dt)
+        cdef Date7x24Array.week_begin_iterator it = self.c_cal.tradedays.WeekBeginUpper(dt)
         return None if it.is_end() else deref(it).first
 
     def get_week_begin_last(self, dt: int):
-        cdef CalendarData.week_begin_iterator it = self.c_cal.data.WeekBeginLower(dt)
+        cdef Date7x24Array.week_begin_iterator it = self.c_cal.tradedays.WeekBeginLower(dt)
         return None if it.is_end() else deref(it).first
 
-    def get_week_days_gte(self, weekday: int, dt: int, count: int=2**32-1):
+    def get_week_days_gte(self, weekday: int, dt: int, count: int):
         ret = []
-        cdef CalendarData.weekday_iterator it = self.c_cal.data.WeekDayUpper(dt, weekday)
+        cdef Date7x24Array.weekday_iterator it = self.c_cal.tradedays.WeekDayUpper(dt, weekday)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             preincrement(it)
             count -= 1
         return ret
 
-    def get_week_days_lte(self, weekday: int, dt: int, count: int=2**32-1):
+    def get_week_days_lte(self, weekday: int, dt: int, count: int):
         ret = []
-        cdef CalendarData.weekday_iterator it = self.c_cal.data.WeekDayLower(dt, weekday)
+        cdef Date7x24Array.weekday_iterator it = self.c_cal.tradedays.WeekDayLower(dt, weekday)
         while not it.is_end() and count > 0:
             ret.append(deref(it).first)
             predecrement(it)
@@ -230,7 +230,7 @@ cdef class PyCalendar_CalendarData:
         ret = []
         if (start > end):
             return ret
-        cdef pair[CalendarData.weekday_iterator, CalendarData.weekday_iterator] p = self.c_cal.data.WeekDayBetween(start, end, weekday)
+        cdef pair[Date7x24Array.weekday_iterator, Date7x24Array.weekday_iterator] p = self.c_cal.tradedays.WeekDayBetween(start, end, weekday)
         if (p.first.is_end() or p.second.is_end()):
             return ret
         while (p.first <= p.second):
@@ -239,17 +239,17 @@ cdef class PyCalendar_CalendarData:
         return ret
 
     def get_week_day_next(self, weekday: int, dt: int):
-        cdef CalendarData.weekday_iterator it = self.c_cal.data.WeekDayUpper(dt, weekday)
+        cdef Date7x24Array.weekday_iterator it = self.c_cal.tradedays.WeekDayUpper(dt, weekday)
         return None if it.is_end() else deref(it).first
 
     def get_week_day_last(self, weekday: int, dt: int):
-        cdef CalendarData.weekday_iterator it = self.c_cal.data.WeekDayLower(dt, weekday)
+        cdef Date7x24Array.weekday_iterator it = self.c_cal.tradedays.WeekDayLower(dt, weekday)
         return None if it.is_end() else deref(it).first
 
     def get_bartime_next(self, interval: int, dt: float):
         return self.c_cal.GetCurrentBartime(seconds(interval), to_time_point(dt))
 
-    def get_bartimes_gte(self, interval: int, start: float, count: int=2**32-1):
+    def get_bartimes_gte(self, interval: int, start: float, count: int):
         # count must cast to <size_t>, otherwise it is PyObject* type and no suitable overloading method found.
         return self.c_cal.GetBartimes(seconds(interval), to_time_point(start), <size_t>count)
 

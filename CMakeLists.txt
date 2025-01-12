@@ -28,15 +28,15 @@ if(DEFINED SKBUILD)
   find_package(Cython REQUIRED)
 
   # Generate pxi template class
-  set(CALENDAR_DATA_CLASS "CalendarData")
+  set(CALENDAR_DATA_CLASS "DatesArray")
   set(DEFAULT_COUNT "=2**32-1")
-  configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_CalendarData.pxi")
-  set(CALENDAR_DATA_CLASS "Calendar7x24Data")
+  configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_${CALENDAR_DATA_CLASS}.pxi")
+  set(CALENDAR_DATA_CLASS "Date7x24Array")
   set(DEFAULT_COUNT "")
-  configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_Calendar7x24Data.pxi")
+  configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_${CALENDAR_DATA_CLASS}.pxi")
 
   add_cython_target(_quantcalendar "quantcalendar/_quantcalendar.pyx" CXX)
-  add_library(_quantcalendar MODULE "src/calendar.cpp" "src/calendar_data.cpp" ${_quantcalendar})
+  add_library(_quantcalendar MODULE "src/calendar.cpp" "src/dates.cpp" ${_quantcalendar})
   target_link_libraries(_quantcalendar
     quantdata::qddatetime
     fmt::fmt
@@ -50,7 +50,7 @@ if(DEFINED SKBUILD)
     "quantcalendar/_quantcalendar.pyi"
     DESTINATION quantcalendar)
 else()
-  add_library(quantcalendar STATIC "src/calendar.cpp" "src/calendar_data.cpp")
+  add_library(quantcalendar STATIC "src/calendar.cpp" "src/dates.cpp")
   target_link_libraries(quantcalendar
     quantdata::qddatetime
     fmt::fmt

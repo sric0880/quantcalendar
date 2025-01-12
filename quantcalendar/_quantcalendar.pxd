@@ -25,19 +25,18 @@ cdef extern from "quantdata/datetime.h" nogil:
 		Date date
 		Time time
 
-cdef extern from "quantcalendar/calendar_data.h" namespace "qmc" nogil:
+cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 	ctypedef long long sec_t
-	# cdef (sec_t, char) calendar_item
-	ctypedef pair[sec_t, char] calendar_item
+	ctypedef pair[sec_t, char] date_status_item
 
-	cdef cppclass CalendarDataNode:
+	cdef cppclass DateNode:
 		Datetime dt_
 		char status_
 		bint IsTrading()
 
-	cdef cppclass CalendarData:
+	cdef cppclass DatesArray:
 		cppclass iterator:
-			ctypedef pair[sec_t, CalendarDataNode] node
+			ctypedef pair[sec_t, DateNode] node
 			node operator*()
 			bint operator==(iterator)
 			bint operator!=(iterator)
@@ -65,9 +64,9 @@ cdef extern from "quantcalendar/calendar_data.h" namespace "qmc" nogil:
 			weekday_iterator operator++()
 			weekday_iterator operator--()
 
-		tradedays_iterator TradedaysUpper(sec_t dt)
-		tradedays_iterator TradedaysLower(sec_t dt)
-		pair[tradedays_iterator, tradedays_iterator] TradedaysBetween(sec_t start, sec_t end)
+		tradedays_iterator Upper(sec_t dt)
+		tradedays_iterator Lower(sec_t dt)
+		pair[tradedays_iterator, tradedays_iterator] Between(sec_t start, sec_t end)
 		month_end_iterator MonthEndUpper(sec_t dt)
 		month_end_iterator MonthEndLower(sec_t dt)
 		pair[month_end_iterator, month_end_iterator] MonthEndBetween(sec_t start, sec_t end)
@@ -84,12 +83,12 @@ cdef extern from "quantcalendar/calendar_data.h" namespace "qmc" nogil:
 		weekday_iterator WeekDayLower(sec_t dt, int weekday)
 		pair[weekday_iterator, weekday_iterator] WeekDayBetween(sec_t start, sec_t end, int weekday)
 
-	cdef cppclass Calendar7x24DataNode:
+	cdef cppclass AllDayTradingNode:
 		Datetime dt_
 
-	cdef cppclass Calendar7x24Data:
+	cdef cppclass Date7x24Array:
 		cppclass iterator:
-			ctypedef pair[sec_t, Calendar7x24DataNode] node
+			ctypedef pair[sec_t, AllDayTradingNode] node
 			node operator*()
 			bint operator==(iterator)
 			bint operator!=(iterator)
@@ -113,9 +112,9 @@ cdef extern from "quantcalendar/calendar_data.h" namespace "qmc" nogil:
 		ctypedef weekday_iterator week_end_iterator
 		ctypedef weekday_iterator week_begin_iterator
 
-		tradedays_iterator TradedaysUpper(sec_t dt)
-		tradedays_iterator TradedaysLower(sec_t dt)
-		pair[tradedays_iterator, tradedays_iterator] TradedaysBetween(sec_t start, sec_t end)
+		tradedays_iterator Upper(sec_t dt)
+		tradedays_iterator Lower(sec_t dt)
+		pair[tradedays_iterator, tradedays_iterator] Between(sec_t start, sec_t end)
 		month_end_iterator MonthEndUpper(sec_t dt)
 		month_end_iterator MonthEndLower(sec_t dt)
 		pair[month_end_iterator, month_end_iterator] MonthEndBetween(sec_t start, sec_t end)
@@ -138,7 +137,7 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	ctypedef time_point[system_clock] tp
 	cdef tp to_time_point(double ts)
 	cdef cppclass Calendar[T]:
-		const T * data
+		const T * tradedays
 		vector[sec_t] GetBartimes(seconds interval, tp start, tp end) except +
 		vector[sec_t] GetBartimes(seconds interval, tp start, size_t count) except +
 		sec_t GetCurrentBartime(seconds interval, tp dt) except +
@@ -152,20 +151,20 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		bint IsTradingTime(tp dt)
 		string ToString()
 
-	cdef cppclass CalendarAstock(Calendar[CalendarData]):
+	cdef cppclass CalendarAstock(Calendar[DatesArray]):
 		@staticmethod
-		void InitData(const vector[calendar_item] &data) except +
+		void Init(const vector[date_status_item] &dates_arr) except +
 		@staticmethod
 		CalendarAstock &GetInstance(const string &symbol) except +
 
-	cdef cppclass CalendarCTP(Calendar[CalendarData]):
+	cdef cppclass CalendarCTP(Calendar[DatesArray]):
 		ctypedef pair[string, vector[session_t]] session_item
 		bint HasNight()
 		@staticmethod
-		void InitData(const vector[calendar_item] &data, vector[session_item] sessions) except + # sessions is rvalue
+		void Init(const vector[date_status_item] &dates_arr, vector[session_item] sessions) except + # sessions is rvalue
 		@staticmethod
 		CalendarCTP &GetInstance(const string &symbol) except +
 
-	cdef cppclass Time7x24Calendar(Calendar[Calendar7x24Data]):
+	cdef cppclass Time7x24Calendar(Calendar[Date7x24Array]):
 		@staticmethod
 		Time7x24Calendar &GetInstance(const string &symbol) except +

@@ -9,8 +9,8 @@ def mongo_client():
     conn = qd.mongo_connect("127.0.0.1", tz_aware=True)  # utc
     print("connect mongodb")
     days = qd.mongo_get_data(conn["quantcalendar"], "cn_stock")
-    data = [(int(day["_id"].timestamp()), day["status"]) for day in days]
-    CalendarAstock.InitData(data)
+    dates_arr = [(int(day["_id"].timestamp()), day["status"]) for day in days]
+    CalendarAstock.Init(dates_arr)
     qd.mongo_close(conn)
     print("disconnect mongodb")
 

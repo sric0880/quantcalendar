@@ -70,12 +70,12 @@ auto calc_bartimestamp_right(int session_start, int session_end, const std::vect
 
 template <class Data>
 Calendar<Data>::Calendar(
-    const Data &data,
+    const Data &dates_container,
     std::vector<session_t> &&sessions,
     const std::vector<seconds> &intervals,
     std::string_view tz,
     sec_t offset,
-    bool bartime_right) : data(&data),
+    bool bartime_right) : tradedays(&dates_container),
                           sessions_(std::move(sessions)),
                           intervals_(intervals.size()),
                           tz_(tz),
@@ -220,15 +220,15 @@ std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point 
   {
     if (interval == 1_d)
     {
-      GenerateDailyBartimes(data->TradedaysUpper(start_day), start, count, end, ret);
+      GenerateDailyBartimes(tradedays->Upper(start_day), start, count, end, ret);
     }
     else if (interval == 1_w)
     {
-      GenerateDailyBartimes(data->WeekEndUpper(start_day), start, count, end, ret);
+      GenerateDailyBartimes(tradedays->WeekEndUpper(start_day), start, count, end, ret);
     }
     else if (interval == 1_m)
     {
-      GenerateDailyBartimes(data->MonthEndUpper(start_day), start, count, end, ret);
+      GenerateDailyBartimes(tradedays->MonthEndUpper(start_day), start, count, end, ret);
     }
     else
     {
@@ -237,7 +237,7 @@ std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point 
   }
   else
   {
-    GenerateMinuteBartimes(data->TradedaysUpper(start_day), inte, start, count, end, ret);
+    GenerateMinuteBartimes(tradedays->Upper(start_day), inte, start, count, end, ret);
   }
   return ret;
 }
@@ -249,7 +249,7 @@ session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
   sec_t start_day = ToDaily(dt);
   sec_t next_sos_dt = -1;
   sec_t next_eos_dt = -1;
-  auto it = data->TradedaysUpper(start_day);
+  auto it = tradedays->Upper(start_day);
   do
   {
     sec_t day = (*it).first;
@@ -290,7 +290,7 @@ bool Calendar<Data>::IsTradingDay(time_point dt) const
   dt -= seconds(offset_);
   try
   {
-    auto &node = data->At(to_daily(dt));
+    auto &node = tradedays->At(to_daily(dt));
     return node.IsTrading();
   }
   catch (std::out_of_range &e)
@@ -410,28 +410,28 @@ std::string Calendar<Data>::ToString() const
   return fmt::format("时区: {}\n交易时间段:\n {}\nK线时间点划分:\n {}\n", tz_, fmt::join(sessions, "\n"), fmt::join(bartimestamps, "\n"));
 }
 
-template class Calendar<CalendarData>;
+template class Calendar<DatesArray>;
 template <>
-bool Calendar<Calendar7x24Data>::IsTrading(time_point dt) const { return true; }
+bool Calendar<Date7x24Array>::IsTrading(time_point dt) const { return true; }
 template <>
-bool Calendar<Calendar7x24Data>::IsTradingDay(time_point dt) const { return true; }
+bool Calendar<Date7x24Array>::IsTradingDay(time_point dt) const { return true; }
 template <>
-bool Calendar<Calendar7x24Data>::IsTradingTime(time_point dt) const { return true; }
-template class Calendar<Calendar7x24Data>;
+bool Calendar<Date7x24Array>::IsTradingTime(time_point dt) const { return true; }
+template class Calendar<Date7x24Array>;
 
 #pragma endregion
 
 #pragma region CalendarAstock
-CalendarData CalendarAstock::calendar_data;
+DatesArray CalendarAstock::dates_container;
 const CalendarAstock &CalendarAstock::GetInstance(const std::string &symbol)
 {
-  static CalendarAstock cal(calendar_data, {{34200, 41400}, {46800, 54000}}, {1min, 5min, 15min, 30min, 1h, 2h}, "Asia/Shanghai");
+  static CalendarAstock cal(dates_container, {{34200, 41400}, {46800, 54000}}, {1min, 5min, 15min, 30min, 1h, 2h}, "Asia/Shanghai");
   return cal;
 }
 #pragma endregion
 
 #pragma region CalendarCTP
-CalendarData CalendarCTP::calendar_data;
+DatesArray CalendarCTP::dates_container;
 ankerl::unordered_dense::map<std::string, CalendarCTP> CalendarCTP::calendar_ctps;
 
 bool CalendarCTP::HasNight() const
@@ -472,14 +472,14 @@ std::string convert_symbol(const std::string &symbol)
   }
 }
 
-void CalendarCTP::InitData(const std::vector<calendar_item> &data, std::vector<session_item> &&sessions)
+void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions)
 {
-  calendar_data.InitData(data);
+  dates_container.Init(dates_arr);
   std::vector<seconds> intervals{1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h};
   const std::string tz("Asia/Shanghai");
   constexpr const sec_t offset = duration_cast<seconds>(2h + 30min).count();
   // common sessions
-  calendar_ctps.emplace("", CalendarCTP(calendar_data, {{75600, 9000}, {32400, 54900}}, intervals, tz, offset));
+  calendar_ctps.emplace("", CalendarCTP(dates_container, {{75600, 9000}, {32400, 54900}}, intervals, tz, offset));
   // custom sessions
   for (auto &[product_id, market_time] : sessions)
   {
@@ -487,15 +487,15 @@ void CalendarCTP::InitData(const std::vector<calendar_item> &data, std::vector<s
     sec_t special_offset = 0;
     if (market_time[0].second <= offset)
       special_offset = market_time[0].second;
-    calendar_ctps.emplace(product_id, CalendarCTP(calendar_data, std::move(market_time), intervals, tz, special_offset));
+    calendar_ctps.emplace(product_id, CalendarCTP(dates_container, std::move(market_time), intervals, tz, special_offset));
   }
   // set special sessions
   // 特殊规则：交易日夜盘不开盘。第二天是节假日，夜盘不交易
   std::vector<sec_t> before_holidays;
   std::vector<sec_t> after_holidays;
-  const std::pair<sec_t, CalendarDataNode> *pre_item = nullptr;
-  auto end = calendar_data.cend();
-  for (auto it = calendar_data.cbegin(); it != end; ++it)
+  const std::pair<sec_t, DateNode> *pre_item = nullptr;
+  auto end = dates_container.cend();
+  for (auto it = dates_container.cbegin(); it != end; ++it)
   {
     auto &item = *it;
     if (pre_item)
@@ -560,10 +560,10 @@ const CalendarCTP &CalendarCTP::GetInstance(const std::string &symbol)
 #pragma endregion
 
 #pragma region Time7x24Calendar
-Calendar7x24Data Time7x24Calendar::calendar_data;
+Date7x24Array Time7x24Calendar::dates_container;
 const Time7x24Calendar &Time7x24Calendar::GetInstance(const std::string &symbol)
 {
-  static Time7x24Calendar cal(calendar_data, {{0, 86400}}, {1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h}, "UTC");
+  static Time7x24Calendar cal(dates_container, {{0, 86400}}, {1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h}, "UTC");
   return cal;
 }
 

@@ -1,24 +1,24 @@
 # cython: language_level=3
 # distutils: language = c++
-# distutils: sources = src/calendar.cpp src/calendar_data.cpp
+# distutils: sources = src/calendar.cpp src/dates.cpp
 from libcpp.utility cimport move
 from ._quantcalendar cimport CalendarAstock, CalendarCTP, Time7x24Calendar
 
-include "_quantcalendar_CalendarData.pxi"
-include "_quantcalendar_Calendar7x24Data.pxi"
+include "_quantcalendar_DatesArray.pxi"
+include "_quantcalendar_Date7x24Array.pxi"
 
-cdef class PyCalendarAstock(PyCalendar_CalendarData):
+cdef class PyCalendarAstock(PyCalendar_DatesArray):
     def __cinit__(self):
         self.c_cal = &CalendarAstock.GetInstance(b"")
 
     @staticmethod
-    def InitData(data):
-        CalendarAstock.InitData(data)
+    def Init(dates_arr):
+        CalendarAstock.Init(dates_arr)
 
     def __str__(self) -> str:
         return super().__str__()
 
-cdef class PyCalendarCTP(PyCalendar_CalendarData):
+cdef class PyCalendarCTP(PyCalendar_DatesArray):
     def __cinit__(self, symbol):
         self.c_cal = &CalendarCTP.GetInstance(symbol.encode("ascii"))
 
@@ -26,13 +26,13 @@ cdef class PyCalendarCTP(PyCalendar_CalendarData):
         return (<CalendarCTP*>self.c_cal).HasNight()
 
     @staticmethod
-    def InitData(data, sessions):
-        CalendarCTP.InitData(data, move(sessions))
+    def Init(dates_arr, sessions):
+        CalendarCTP.Init(dates_arr, move(sessions))
 
     def __str__(self) -> str:
         return super().__str__()
 
-cdef class PyTime7x24Calendar(PyCalendar_Calendar7x24Data):
+cdef class PyTime7x24Calendar(PyCalendar_Date7x24Array):
     def __cinit__(self):
         self.c_cal = &Time7x24Calendar.GetInstance(b"")
 

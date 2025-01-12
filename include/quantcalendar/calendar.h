@@ -7,7 +7,7 @@
 #include <functional> // for reference_wrapper
 
 #include "quantdata/datetime.h"
-#include "quantcalendar/calendar_data.h"
+#include "quantcalendar/dates.h"
 #include "ankerl/unordered_dense.h"
 
 NS_QMC_BEGIN
@@ -60,7 +60,7 @@ public:
   Calendar &operator=(const Calendar &) = delete;
   Calendar(Calendar &&rhs) = default;
   Calendar &operator=(Calendar &&rhs) = default;
-  const Data *data;
+  const Data *tradedays;
 
   void InitSpecialSessions(ankerl::unordered_dense::map<sec_t, std::shared_ptr<SpecialSessions>> &&sessions) noexcept;
   /**
@@ -125,7 +125,7 @@ protected:
   /// @param tz 时区
   /// @param offset 有些市场交易时间会跨越凌晨0点, offset表示超过0点的时间差, 越过0点表示下一个交易日
   /// @param bartime_right K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间 @todo:  `left`暂未实现
-  Calendar(const Data &data,
+  Calendar(const Data &dates_container,
            std::vector<session_t> &&sessions,
            const std::vector<seconds> &intervals,
            std::string_view tz,
@@ -162,43 +162,43 @@ private:
   session_t FindNextSession(time_point dt, bool with_breaks) const;
 };
 
-class CalendarAstock : public Calendar<CalendarData>
+class CalendarAstock : public Calendar<DatesArray>
 {
 public:
-  static void InitData(const std::vector<calendar_item> &data)
+  static void Init(const std::vector<date_status_item> &dates_arr)
   {
-    calendar_data.InitData(data);
+    dates_container.Init(dates_arr);
   }
 
   static const CalendarAstock &GetInstance(const std::string &symbol = "");
 
 private:
-  using Calendar<CalendarData>::Calendar;
-  static CalendarData calendar_data;
+  using Calendar<DatesArray>::Calendar;
+  static DatesArray dates_container;
 };
 
-class CalendarCTP : public Calendar<CalendarData>
+class CalendarCTP : public Calendar<DatesArray>
 {
 public:
   using session_item = std::tuple<std::string /*product_id*/, std::vector<session_t> /*market time*/>;
   bool HasNight() const;
-  static void InitData(const std::vector<calendar_item> &data, std::vector<session_item> &&sessions);
+  static void Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions);
   static const CalendarCTP &GetInstance(const std::string &symbol = "");
 
 private:
-  using Calendar<CalendarData>::Calendar;
-  static CalendarData calendar_data;
+  using Calendar<DatesArray>::Calendar;
+  static DatesArray dates_container;
   static ankerl::unordered_dense::map<std::string, CalendarCTP> calendar_ctps;
 };
 
-class Time7x24Calendar : public Calendar<Calendar7x24Data>
+class Time7x24Calendar : public Calendar<Date7x24Array>
 {
 public:
   static const Time7x24Calendar &GetInstance(const std::string &symbol = "");
 
 private:
-  using Calendar<Calendar7x24Data>::Calendar;
-  static Calendar7x24Data calendar_data;
+  using Calendar<Date7x24Array>::Calendar;
+  static Date7x24Array dates_container;
 };
 
 NS_QMC_END

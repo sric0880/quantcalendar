@@ -1,11 +1,11 @@
 #include <functional>
 
-#include "quantcalendar/calendar_data.h"
+#include "quantcalendar/dates.h"
 
 NS_QMC_BEGIN
 
-#pragma region CalendarData
-CalendarData::tradedays_iterator &CalendarData::tradedays_iterator::operator++()
+#pragma region DatesArray
+DatesArray::tradedays_iterator &DatesArray::tradedays_iterator::operator++()
 {
   do
   {
@@ -15,7 +15,7 @@ CalendarData::tradedays_iterator &CalendarData::tradedays_iterator::operator++()
   return *this;
 }
 
-CalendarData::tradedays_iterator &CalendarData::tradedays_iterator::operator--()
+DatesArray::tradedays_iterator &DatesArray::tradedays_iterator::operator--()
 {
   do
   {
@@ -25,7 +25,7 @@ CalendarData::tradedays_iterator &CalendarData::tradedays_iterator::operator--()
   return *this;
 }
 
-CalendarData::month_begin_iterator &CalendarData::month_begin_iterator::operator++()
+DatesArray::month_begin_iterator &DatesArray::month_begin_iterator::operator++()
 {
   do
   {
@@ -35,7 +35,7 @@ CalendarData::month_begin_iterator &CalendarData::month_begin_iterator::operator
   return *this;
 }
 
-CalendarData::month_begin_iterator &CalendarData::month_begin_iterator::operator--()
+DatesArray::month_begin_iterator &DatesArray::month_begin_iterator::operator--()
 {
   do
   {
@@ -45,7 +45,7 @@ CalendarData::month_begin_iterator &CalendarData::month_begin_iterator::operator
   return *this;
 }
 
-CalendarData::month_end_iterator &CalendarData::month_end_iterator::operator++()
+DatesArray::month_end_iterator &DatesArray::month_end_iterator::operator++()
 {
   do
   {
@@ -55,7 +55,7 @@ CalendarData::month_end_iterator &CalendarData::month_end_iterator::operator++()
   return *this;
 }
 
-CalendarData::month_end_iterator &CalendarData::month_end_iterator::operator--()
+DatesArray::month_end_iterator &DatesArray::month_end_iterator::operator--()
 {
   do
   {
@@ -65,7 +65,7 @@ CalendarData::month_end_iterator &CalendarData::month_end_iterator::operator--()
   return *this;
 }
 
-CalendarData::week_begin_iterator &CalendarData::week_begin_iterator::operator++()
+DatesArray::week_begin_iterator &DatesArray::week_begin_iterator::operator++()
 {
   do
   {
@@ -75,7 +75,7 @@ CalendarData::week_begin_iterator &CalendarData::week_begin_iterator::operator++
   return *this;
 }
 
-CalendarData::week_begin_iterator &CalendarData::week_begin_iterator::operator--()
+DatesArray::week_begin_iterator &DatesArray::week_begin_iterator::operator--()
 {
   do
   {
@@ -85,7 +85,7 @@ CalendarData::week_begin_iterator &CalendarData::week_begin_iterator::operator--
   return *this;
 }
 
-CalendarData::week_end_iterator &CalendarData::week_end_iterator::operator++()
+DatesArray::week_end_iterator &DatesArray::week_end_iterator::operator++()
 {
   do
   {
@@ -95,7 +95,7 @@ CalendarData::week_end_iterator &CalendarData::week_end_iterator::operator++()
   return *this;
 }
 
-CalendarData::week_end_iterator &CalendarData::week_end_iterator::operator--()
+DatesArray::week_end_iterator &DatesArray::week_end_iterator::operator--()
 {
   do
   {
@@ -105,7 +105,7 @@ CalendarData::week_end_iterator &CalendarData::week_end_iterator::operator--()
   return *this;
 }
 
-CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator++()
+DatesArray::weekday_iterator &DatesArray::weekday_iterator::operator++()
 {
   do
   {
@@ -115,7 +115,7 @@ CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator++()
   return *this;
 }
 
-CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator--()
+DatesArray::weekday_iterator &DatesArray::weekday_iterator::operator--()
 {
   do
   {
@@ -125,15 +125,15 @@ CalendarData::weekday_iterator &CalendarData::weekday_iterator::operator--()
   return *this;
 }
 
-void CalendarData::InitData(const std::vector<calendar_item> &calendar_data)
+void DatesArray::Init(const std::vector<date_status_item> &arr)
 {
-  for (auto &[ts, status] : calendar_data)
+  for (auto &[ts, status] : arr)
   {
-    calendar_data_.emplace(ts, CalendarDataNode(ts, status));
+    calendar_data_.emplace(ts, DateNode(ts, status));
   }
   end_ = calendar_data_.cend();
   rend_ = calendar_data_.cbegin() - 1;
-  const CalendarDataNode *pre_node = nullptr;
+  const DateNode *pre_node = nullptr;
   for (auto &value : calendar_data_.values())
   {
     auto &node = value.second;
@@ -156,104 +156,104 @@ void CalendarData::InitData(const std::vector<calendar_item> &calendar_data)
   }
 }
 
-CalendarData::tradedays_iterator CalendarData::TradedaysUpper(sec_t dt) const
+DatesArray::tradedays_iterator DatesArray::Upper(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::tradedays_iterator>(dt);
+  auto it = SafeFind<DatesArray::tradedays_iterator>(dt);
   if (!it.is_end() && !it->second.IsTrading())
     ++it;
   return it;
 }
 
-CalendarData::tradedays_iterator CalendarData::TradedaysLower(sec_t dt) const
+DatesArray::tradedays_iterator DatesArray::Lower(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::tradedays_iterator>(dt);
+  auto it = SafeFind<DatesArray::tradedays_iterator>(dt);
   if (!it.is_end() && !it->second.IsTrading())
     --it;
   return it;
 }
 
-CalendarData::month_end_iterator CalendarData::MonthEndUpper(sec_t dt) const
+DatesArray::month_end_iterator DatesArray::MonthEndUpper(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::month_end_iterator>(dt);
+  auto it = SafeFind<DatesArray::month_end_iterator>(dt);
   if (!it.is_end() && !it->second.IsMonthEnd())
     ++it;
   return it;
 }
 
-CalendarData::month_end_iterator CalendarData::MonthEndLower(sec_t dt) const
+DatesArray::month_end_iterator DatesArray::MonthEndLower(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::month_end_iterator>(dt);
+  auto it = SafeFind<DatesArray::month_end_iterator>(dt);
   if (!it.is_end() && !it->second.IsMonthEnd())
     --it;
   return it;
 }
 
-CalendarData::month_begin_iterator CalendarData::MonthBeginUpper(sec_t dt) const
+DatesArray::month_begin_iterator DatesArray::MonthBeginUpper(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::month_begin_iterator>(dt);
+  auto it = SafeFind<DatesArray::month_begin_iterator>(dt);
   if (!it.is_end() && !it->second.IsMonthBegin())
     ++it;
   return it;
 }
 
-CalendarData::month_begin_iterator CalendarData::MonthBeginLower(sec_t dt) const
+DatesArray::month_begin_iterator DatesArray::MonthBeginLower(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::month_begin_iterator>(dt);
+  auto it = SafeFind<DatesArray::month_begin_iterator>(dt);
   if (!it.is_end() && !it->second.IsMonthBegin())
     --it;
   return it;
 }
 
-CalendarData::week_end_iterator CalendarData::WeekEndUpper(sec_t dt) const
+DatesArray::week_end_iterator DatesArray::WeekEndUpper(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::week_end_iterator>(dt);
+  auto it = SafeFind<DatesArray::week_end_iterator>(dt);
   if (!it.is_end() && !it->second.IsWeekEnd())
     ++it;
   return it;
 }
 
-CalendarData::week_end_iterator CalendarData::WeekEndLower(sec_t dt) const
+DatesArray::week_end_iterator DatesArray::WeekEndLower(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::week_end_iterator>(dt);
+  auto it = SafeFind<DatesArray::week_end_iterator>(dt);
   if (!it.is_end() && !it->second.IsWeekEnd())
     --it;
   return it;
 }
 
-CalendarData::week_begin_iterator CalendarData::WeekBeginUpper(sec_t dt) const
+DatesArray::week_begin_iterator DatesArray::WeekBeginUpper(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::week_begin_iterator>(dt);
+  auto it = SafeFind<DatesArray::week_begin_iterator>(dt);
   if (!it.is_end() && !it->second.IsWeekBegin())
     ++it;
   return it;
 }
 
-CalendarData::week_begin_iterator CalendarData::WeekBeginLower(sec_t dt) const
+DatesArray::week_begin_iterator DatesArray::WeekBeginLower(sec_t dt) const
 {
-  auto it = SafeFind<CalendarData::week_begin_iterator>(dt);
+  auto it = SafeFind<DatesArray::week_begin_iterator>(dt);
   if (!it.is_end() && !it->second.IsWeekBegin())
     --it;
   return it;
 }
 
-CalendarData::weekday_iterator CalendarData::WeekDayUpper(sec_t dt, int weekday) const
+DatesArray::weekday_iterator DatesArray::WeekDayUpper(sec_t dt, int weekday) const
 {
-  auto it = SafeFind<CalendarData::weekday_iterator>(dt, weekday);
+  auto it = SafeFind<DatesArray::weekday_iterator>(dt, weekday);
   if (!it.is_end() && !it->second.IsWeekDay(weekday))
     ++it;
   return it;
 }
 
-CalendarData::weekday_iterator CalendarData::WeekDayLower(sec_t dt, int weekday) const
+DatesArray::weekday_iterator DatesArray::WeekDayLower(sec_t dt, int weekday) const
 {
-  auto it = SafeFind<CalendarData::weekday_iterator>(dt, weekday);
+  auto it = SafeFind<DatesArray::weekday_iterator>(dt, weekday);
   if (!it.is_end() && !it->second.IsWeekDay(weekday))
     --it;
   return it;
 }
 #pragma endregion
 
-#pragma region Calendar7x24Data
+#pragma region Date7x24Array
 inline bool is_leap_year(int year)
 {
   return (year % 100 != 0 && year % 4 == 0) || (year % 400 == 0);
@@ -374,14 +374,14 @@ inline void pre_week(Date &date)
   } while (--next);
 }
 
-inline void update_current(Calendar7x24Data::iterator::value_type &current)
+inline void update_current(Date7x24Array::iterator::value_type &current)
 {
   current.second.cdate_ = current.second.dt_.date.isocalendar();
   current.second.dt_.calc_timestamp();
   current.first = current.second.dt_.to_timestamp();
 }
 
-inline void check_month_end_upper(Calendar7x24Data::iterator::value_type &current)
+inline void check_month_end_upper(Date7x24Array::iterator::value_type &current)
 {
   int year = current.second.dt_.date.year;
   int mon = current.second.dt_.date.mon;
@@ -389,7 +389,7 @@ inline void check_month_end_upper(Calendar7x24Data::iterator::value_type &curren
   update_current(current);
 }
 
-void check_month_end_lower(Calendar7x24Data::iterator::value_type &current)
+void check_month_end_lower(Date7x24Array::iterator::value_type &current)
 {
   int year = current.second.dt_.date.year;
   int mon = current.second.dt_.date.mon;
@@ -404,7 +404,7 @@ void check_month_end_lower(Calendar7x24Data::iterator::value_type &current)
   }
 }
 
-void check_month_begin_upper(Calendar7x24Data::iterator::value_type &current)
+void check_month_begin_upper(Date7x24Array::iterator::value_type &current)
 {
   int day = current.second.dt_.date.day;
   if (day == 1)
@@ -416,13 +416,13 @@ void check_month_begin_upper(Calendar7x24Data::iterator::value_type &current)
   }
 }
 
-inline void check_month_begin_lower(Calendar7x24Data::iterator::value_type &current)
+inline void check_month_begin_lower(Date7x24Array::iterator::value_type &current)
 {
   current.second.dt_.date.day = 1;
   update_current(current);
 }
 
-void check_week_day_upper(Calendar7x24Data::iterator::value_type &current, int weekday)
+void check_week_day_upper(Date7x24Array::iterator::value_type &current, int weekday)
 {
   while (current.second.cdate_.weekday != weekday)
   {
@@ -431,7 +431,7 @@ void check_week_day_upper(Calendar7x24Data::iterator::value_type &current, int w
   }
 }
 
-void check_week_day_lower(Calendar7x24Data::iterator::value_type &current, int weekday)
+void check_week_day_lower(Date7x24Array::iterator::value_type &current, int weekday)
 {
   while (current.second.cdate_.weekday != weekday)
   {
@@ -440,7 +440,7 @@ void check_week_day_lower(Calendar7x24Data::iterator::value_type &current, int w
   }
 }
 
-Calendar7x24Data::tradedays_iterator &Calendar7x24Data::tradedays_iterator::operator++()
+Date7x24Array::tradedays_iterator &Date7x24Array::tradedays_iterator::operator++()
 {
   if (!is_end())
   {
@@ -450,7 +450,7 @@ Calendar7x24Data::tradedays_iterator &Calendar7x24Data::tradedays_iterator::oper
   return *this;
 }
 
-Calendar7x24Data::tradedays_iterator &Calendar7x24Data::tradedays_iterator::operator--()
+Date7x24Array::tradedays_iterator &Date7x24Array::tradedays_iterator::operator--()
 {
   if (!is_end())
   {
@@ -460,7 +460,7 @@ Calendar7x24Data::tradedays_iterator &Calendar7x24Data::tradedays_iterator::oper
   return *this;
 }
 
-Calendar7x24Data::month_begin_iterator &Calendar7x24Data::month_begin_iterator::operator++()
+Date7x24Array::month_begin_iterator &Date7x24Array::month_begin_iterator::operator++()
 {
   if (!is_end())
   {
@@ -470,7 +470,7 @@ Calendar7x24Data::month_begin_iterator &Calendar7x24Data::month_begin_iterator::
   return *this;
 }
 
-Calendar7x24Data::month_begin_iterator &Calendar7x24Data::month_begin_iterator::operator--()
+Date7x24Array::month_begin_iterator &Date7x24Array::month_begin_iterator::operator--()
 {
   if (!is_end())
   {
@@ -480,7 +480,7 @@ Calendar7x24Data::month_begin_iterator &Calendar7x24Data::month_begin_iterator::
   return *this;
 }
 
-Calendar7x24Data::month_end_iterator &Calendar7x24Data::month_end_iterator::operator++()
+Date7x24Array::month_end_iterator &Date7x24Array::month_end_iterator::operator++()
 {
   if (!is_end())
   {
@@ -490,7 +490,7 @@ Calendar7x24Data::month_end_iterator &Calendar7x24Data::month_end_iterator::oper
   return *this;
 }
 
-Calendar7x24Data::month_end_iterator &Calendar7x24Data::month_end_iterator::operator--()
+Date7x24Array::month_end_iterator &Date7x24Array::month_end_iterator::operator--()
 {
   if (!is_end())
   {
@@ -500,7 +500,7 @@ Calendar7x24Data::month_end_iterator &Calendar7x24Data::month_end_iterator::oper
   return *this;
 }
 
-Calendar7x24Data::weekday_iterator &Calendar7x24Data::weekday_iterator::operator++()
+Date7x24Array::weekday_iterator &Date7x24Array::weekday_iterator::operator++()
 {
   if (!is_end())
   {
@@ -510,7 +510,7 @@ Calendar7x24Data::weekday_iterator &Calendar7x24Data::weekday_iterator::operator
   return *this;
 }
 
-Calendar7x24Data::weekday_iterator &Calendar7x24Data::weekday_iterator::operator--()
+Date7x24Array::weekday_iterator &Date7x24Array::weekday_iterator::operator--()
 {
   if (!is_end())
   {
@@ -520,49 +520,49 @@ Calendar7x24Data::weekday_iterator &Calendar7x24Data::weekday_iterator::operator
   return *this;
 }
 
-Calendar7x24Data::month_end_iterator Calendar7x24Data::MonthEndUpper(sec_t dt) const
+Date7x24Array::month_end_iterator Date7x24Array::MonthEndUpper(sec_t dt) const
 {
-  auto it = SafeFind<Calendar7x24Data::month_end_iterator>(dt);
+  auto it = SafeFind<Date7x24Array::month_end_iterator>(dt);
   if (!it.is_end())
     check_month_end_upper(it.current_);
   return it;
 }
 
-Calendar7x24Data::month_end_iterator Calendar7x24Data::MonthEndLower(sec_t dt) const
+Date7x24Array::month_end_iterator Date7x24Array::MonthEndLower(sec_t dt) const
 {
-  auto it = SafeFind<Calendar7x24Data::month_end_iterator>(dt);
+  auto it = SafeFind<Date7x24Array::month_end_iterator>(dt);
   if (!it.is_end())
     check_month_end_lower(it.current_);
   return it;
 }
 
-Calendar7x24Data::month_begin_iterator Calendar7x24Data::MonthBeginUpper(sec_t dt) const
+Date7x24Array::month_begin_iterator Date7x24Array::MonthBeginUpper(sec_t dt) const
 {
-  auto it = SafeFind<Calendar7x24Data::month_begin_iterator>(dt);
+  auto it = SafeFind<Date7x24Array::month_begin_iterator>(dt);
   if (!it.is_end())
     check_month_begin_upper(it.current_);
   return it;
 }
 
-Calendar7x24Data::month_begin_iterator Calendar7x24Data::MonthBeginLower(sec_t dt) const
+Date7x24Array::month_begin_iterator Date7x24Array::MonthBeginLower(sec_t dt) const
 {
-  auto it = SafeFind<Calendar7x24Data::month_begin_iterator>(dt);
+  auto it = SafeFind<Date7x24Array::month_begin_iterator>(dt);
   if (!it.is_end())
     check_month_begin_lower(it.current_);
   return it;
 }
 
-Calendar7x24Data::weekday_iterator Calendar7x24Data::WeekDayUpper(sec_t dt, int weekday) const
+Date7x24Array::weekday_iterator Date7x24Array::WeekDayUpper(sec_t dt, int weekday) const
 {
-  auto it = SafeFind<Calendar7x24Data::weekday_iterator>(dt, weekday);
+  auto it = SafeFind<Date7x24Array::weekday_iterator>(dt, weekday);
   if (!it.is_end())
     check_week_day_upper(it.current_, weekday);
   return it;
 }
 
-Calendar7x24Data::weekday_iterator Calendar7x24Data::WeekDayLower(sec_t dt, int weekday) const
+Date7x24Array::weekday_iterator Date7x24Array::WeekDayLower(sec_t dt, int weekday) const
 {
-  auto it = SafeFind<Calendar7x24Data::weekday_iterator>(dt, weekday);
+  auto it = SafeFind<Date7x24Array::weekday_iterator>(dt, weekday);
   if (!it.is_end())
     check_week_day_lower(it.current_, weekday);
   return it;
