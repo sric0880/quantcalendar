@@ -108,6 +108,8 @@ public:
   const std::vector<session_t> &GetOrderedSessions() const { return sorted_sessions_; }
   // 返回开盘收盘时间
   const session_t &GetOpenCloseTime() const { return open_close_sessions_[0]; }
+  const std::vector<int> &GetIntervals() const { return intervals_; }
+  const std::string &GetTimezone() const { return tz_; }
   // 判断时间`dt`是否正在交易中, `dt`时间必须是交易所本地时间
   bool IsTrading(time_point dt) const;
   // 判断是否交易日。如果IsTrading返回true，那么IsTradingDay必然返回true，反过来不一定成立。

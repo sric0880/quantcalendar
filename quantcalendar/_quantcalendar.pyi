@@ -197,6 +197,12 @@ class PyCalendar:
     def get_open_close_time(self) -> tuple[int, int]:
         """ 返回开盘收盘时间 """
 
+    def get_timezone(self) -> str:
+        """ 返回时区 """
+
+    def get_intervals(self) -> list[int]:
+        """ 返回K线间隔 """
+
     def is_trading(self, dt: float) -> bool:
         """ 判断时间`dt`是否正在交易中, `dt`时间必须是交易所本地时间
         """
@@ -212,12 +218,20 @@ class PyCalendar:
         """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
         """
 
-class PyCalendarAstock(PyCalendar):
+class PyCalendar_DatesArray(PyCalendar):
+    """实际上并没有继承PyCalendar"""
+    pass
+
+class PyCalendar_Date7x24Array(PyCalendar):
+    """实际上并没有继承PyCalendar"""
+    pass
+
+class PyCalendarAstock(PyCalendar_DatesArray):
     @staticmethod
     def Init(dates_arr):
         """"""
 
-class PyCalendarCTP(PyCalendar):
+class PyCalendarCTP(PyCalendar_DatesArray):
     def __init__(self, symbol: str):
         """"""
 
@@ -228,7 +242,7 @@ class PyCalendarCTP(PyCalendar):
     def Init(dates_arr, sessions):
         """"""
 
-class PyTime7x24Calendar(PyCalendar):
+class PyTime7x24Calendar(PyCalendar_Date7x24Array):
     """7 x 24小时不间断交易，比如数字货币
     开盘和收盘时间都是凌晨0点
 

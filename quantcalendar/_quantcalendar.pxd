@@ -146,6 +146,8 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		const vector[session_t] &GetSessions()
 		const vector[session_t] &GetOrderedSessions()
 		const session_t &GetOpenCloseTime()
+		const vector[int] &GetIntervals()
+		const string &GetTimezone()
 		bint IsTrading(tp dt) except +
 		bint IsTradingDay(tp dt) except +
 		bint IsTradingTime(tp dt)

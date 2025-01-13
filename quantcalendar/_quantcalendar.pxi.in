@@ -271,6 +271,12 @@ cdef class PyCalendar_${CALENDAR_DATA_CLASS}:
     def get_open_close_time(self):
         return self.c_cal.GetOpenCloseTime()
 
+    def get_timezone(self):
+        return self.c_cal.GetTimezone().decode("utf8")
+
+    def get_intervals(self):
+        return self.c_cal.GetIntervals();
+
     def is_trading(self, dt: float):
         return self.c_cal.IsTrading(to_time_point(dt))
 

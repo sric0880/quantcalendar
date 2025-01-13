@@ -18,6 +18,8 @@ def mongo_client():
 # fmt: off
 def test_tradedays():
     cal = CalendarAstock()
+    assert cal.get_timezone() == "Asia/Shanghai"
+    assert cal.get_intervals() == [1*bar_unit.min, 5*bar_unit.min, 15*bar_unit.min, 30*bar_unit.min, bar_unit.hour, 2*bar_unit.hour]
     assert cal.get_tradedays_gte(to_seconds(2023, 6, 30))[0] == to_seconds(2023, 6, 30)
     assert cal.get_tradeday_next(to_seconds(2023, 6, 30)) == to_seconds(2023, 6, 30)
     assert cal.get_tradedays_lte(to_seconds(2024, 9, 17))[-1] == to_seconds(2024, 9, 13)

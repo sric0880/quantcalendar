@@ -7,6 +7,10 @@ from ._quantcalendar cimport CalendarAstock, CalendarCTP, Time7x24Calendar
 include "_quantcalendar_DatesArray.pxi"
 include "_quantcalendar_Date7x24Array.pxi"
 
+cdef class PyCalendar:
+    """only used for annotation"""
+    pass
+
 cdef class PyCalendarAstock(PyCalendar_DatesArray):
     def __cinit__(self):
         self.c_cal = &CalendarAstock.GetInstance(b"")

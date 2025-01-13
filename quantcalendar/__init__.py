@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from ._quantcalendar import PyCalendar as Calendar  # only used for annotation
 from ._quantcalendar import PyCalendarAstock as CalendarAstock
 from ._quantcalendar import PyCalendarCTP as CalendarCTP
 from ._quantcalendar import PyTime7x24Calendar as Time7x24Calendar
@@ -35,6 +36,7 @@ def to_timepoint(year, month, day, hour=0, minute=0, second=0, microsecond=0):
 
 
 __all__ = [
+    "Calendar",
     "CalendarAstock",
     "CalendarCTP",
     "Time7x24Calendar",
