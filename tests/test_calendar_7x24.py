@@ -1,5 +1,6 @@
 from datetime import timezone
 
+import numpy as np
 import pandas as pd
 
 from quantcalendar import Time7x24Calendar, bar_unit, to_seconds, to_timepoint
@@ -113,6 +114,10 @@ def test_next_bartime():
     ]
     for query, answer, interval in bartime_testcases:
         assert cal.get_bartime_next(interval, query) == answer
+
+    assert cal.get_bartime_next(60, int(to_timepoint(2024, 9, 13, 23, 59, 1))*1000) == to_seconds(2024, 9, 14)
+    dt = np.datetime64("2024-09-13T23:59:01")
+    assert cal.get_bartime_next(60, np.datetime64(dt, "ms").view("int64")) == to_seconds(2024, 9, 14)
 
 
 def test_get_bartimes():

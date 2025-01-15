@@ -11,6 +11,8 @@ cdef extern from "<chrono>" namespace "std::chrono" nogil:
 	cdef cppclass time_point[_Clock, _Duration=*]:
 		pass
 
+ctypedef time_point[system_clock] tp
+
 cdef extern from "quantdata/datetime.h" nogil:
 	cdef cppclass Date:
 		int year
@@ -24,6 +26,12 @@ cdef extern from "quantdata/datetime.h" nogil:
 	cdef cppclass Datetime:
 		Date date
 		Time time
+	cdef tp fromtimestamp(long long ts)
+	cdef tp fromtimestamp(double ts)
+	cdef tp fromtimestamp_milli(long long ts)
+	cdef tp fromtimestamp_micro(long long ts)
+	cdef tp fromtimestamp_nano(long long ts)
+	cdef tp fromisoformat(string time_string)
 
 cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 	ctypedef long long sec_t
@@ -134,8 +142,6 @@ cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 
 cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	ctypedef pair[sec_t, sec_t] session_t
-	ctypedef time_point[system_clock] tp
-	cdef tp to_time_point(double ts)
 	cdef cppclass Calendar[T]:
 		const T * tradedays
 		vector[sec_t] GetBartimes(seconds interval, tp start, tp end) except +

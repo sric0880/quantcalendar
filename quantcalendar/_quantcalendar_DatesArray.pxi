@@ -7,7 +7,8 @@ from cython.operator cimport preincrement, predecrement
 from cython.operator cimport dereference as deref
 from libcpp.pair cimport pair
 
-from ._quantcalendar cimport Calendar, seconds, to_time_point, DatesArray
+from ._quantcalendar cimport Calendar, seconds, DatesArray, fromtimestamp, \
+fromtimestamp_milli, fromtimestamp_micro, fromtimestamp_nano
 
 cdef class PyCalendar_DatesArray:
     cdef const Calendar[DatesArray]* c_cal
@@ -258,21 +259,35 @@ cdef class PyCalendar_DatesArray:
         cdef DatesArray.weekday_iterator it = self.c_cal.tradedays.WeekDayLower(dt, weekday)
         return None if it.is_end() else deref(it).first
 
-    def get_bartime_next(self, interval: int, dt: float):
-        return self.c_cal.GetCurrentBartime(seconds(interval), to_time_point(dt))
+    def get_bartime_next(self, int interval, dt):
+        if isinstance(dt, float):
+            return self.c_cal.GetCurrentBartime(seconds(interval), fromtimestamp(<double>dt))
+        else:
+            return self.c_cal.GetCurrentBartime(seconds(interval), fromtimestamp_milli(<long long>dt))
 
-    def get_bartimes_gte(self, interval: int, start: float, count: int=2**32-1):
-        # count must cast to <size_t>, otherwise it is PyObject* type and no suitable overloading method found.
-        return self.c_cal.GetBartimes(seconds(interval), to_time_point(start), <size_t>count)
+    def get_bartimes_gte(self, int interval, start, size_t count=2**32-1):
+        if isinstance(start, float):
+            return self.c_cal.GetBartimes(seconds(interval), fromtimestamp(<double>start), count)
+        else:
+            return self.c_cal.GetBartimes(seconds(interval), fromtimestamp_milli(<long long>start), count)
 
-    def get_bartimes_between(self, interval: int, start: float, end: float):
-        return self.c_cal.GetBartimes(seconds(interval), to_time_point(start), to_time_point(end))
+    def get_bartimes_between(self, int interval, start, end):
+        if isinstance(start, float):
+            return self.c_cal.GetBartimes(seconds(interval), fromtimestamp(<double>start), fromtimestamp(<double>end))
+        else:
+            return self.c_cal.GetBartimes(seconds(interval), fromtimestamp_milli(<long long>start), fromtimestamp_milli(<long long>end))
 
-    def get_next_open_close(self, dt: float):
-        return self.c_cal.GetNextOpenClose(to_time_point(dt))
+    def get_next_open_close(self, dt):
+        if isinstance(dt, float):
+            return self.c_cal.GetNextOpenClose(fromtimestamp(<double>dt))
+        else:
+            return self.c_cal.GetNextOpenClose(fromtimestamp_milli(<long long>dt))
 
-    def get_next_session(self, dt: float):
-        return self.c_cal.GetNextSession(to_time_point(dt))
+    def get_next_session(self, dt):
+        if isinstance(dt, float):
+            return self.c_cal.GetNextSession(fromtimestamp(<double>dt))
+        else:
+            return self.c_cal.GetNextSession(fromtimestamp_milli(<long long>dt))
 
     def get_sessions(self):
         return self.c_cal.GetSessions()
@@ -289,14 +304,23 @@ cdef class PyCalendar_DatesArray:
     def get_intervals(self):
         return self.c_cal.GetIntervals();
 
-    def is_trading(self, dt: float):
-        return self.c_cal.IsTrading(to_time_point(dt))
+    def is_trading(self, dt):
+        if isinstance(dt, float):
+            return self.c_cal.IsTrading(fromtimestamp(<double>dt))
+        else:
+            return self.c_cal.IsTrading(fromtimestamp_milli(<long long>dt))
 
-    def is_trading_day(self, dt: float):
-        return self.c_cal.IsTradingDay(to_time_point(dt))
+    def is_trading_day(self, dt):
+        if isinstance(dt, float):
+            return self.c_cal.IsTradingDay(fromtimestamp(<double>dt))
+        else:
+            return self.c_cal.IsTradingDay(fromtimestamp_milli(<long long>dt))
 
-    def is_trading_time(self, dt: float):
-        return self.c_cal.IsTradingTime(to_time_point(dt))
+    def is_trading_time(self, dt):
+        if isinstance(dt, float):
+            return self.c_cal.IsTradingTime(fromtimestamp(<double>dt))
+        else:
+            return self.c_cal.IsTradingTime(fromtimestamp_milli(<long long>dt))
 
     def __str__(self) -> str:
         return self.c_cal.ToString().decode('UTF-8')

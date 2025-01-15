@@ -44,11 +44,6 @@ inline sec_t to_daily(const datetime &dt)
   return duration_cast<seconds>(duration_cast<days>(dt.to_duration())).count();
 }
 
-inline time_point to_time_point(double ts)
-{
-  return time_point(time_point::duration(static_cast<typename time_point::rep>(ts * time_point::period::den)));
-}
-
 /**
  * 交易日历
  */
