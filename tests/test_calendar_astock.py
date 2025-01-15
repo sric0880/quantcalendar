@@ -6,13 +6,10 @@ from quantcalendar import CalendarAstock, bar_unit, to_seconds, to_timepoint
 
 @pytest.fixture(scope="module", autouse=True)
 def mongo_client():
-    conn = qd.mongo_connect("127.0.0.1", tz_aware=True)  # utc
-    print("connect mongodb")
-    days = qd.mongo_get_data(conn["quantcalendar"], "cn_stock")
-    dates_arr = [(int(day["_id"].timestamp()), day["status"]) for day in days]
-    CalendarAstock.Init(dates_arr)
-    qd.mongo_close(conn)
-    print("disconnect mongodb")
+    with qd.open_mongodb(host="127.0.0.1", tz_aware=True):
+        days = qd.mongo_get_data("quantcalendar", "cn_stock")
+        dates_arr = [(int(day["_id"].timestamp()), day["status"]) for day in days]
+        CalendarAstock.Init(dates_arr)
 
 
 # fmt: off
