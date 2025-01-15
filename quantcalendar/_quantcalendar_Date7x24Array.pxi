@@ -43,6 +43,18 @@ cdef class PyCalendar_Date7x24Array:
             preincrement(p.first)
         return ret
 
+    def get_tradedays_count(self, start: int, end: int) -> int:
+        if (start > end):
+            return 0
+        cdef pair[Date7x24Array.tradedays_iterator, Date7x24Array.tradedays_iterator] p = self.c_cal.tradedays.Between(start, end)
+        if (p.first.is_end() or p.second.is_end()):
+            return 0
+        count = 0
+        while (p.first <= p.second):
+            count += 1
+            preincrement(p.first)
+        return count
+
     def get_tradeday_next(self, dt: int):
         cdef Date7x24Array.tradedays_iterator it = self.c_cal.tradedays.Upper(dt)
         return None if it.is_end() else deref(it).first

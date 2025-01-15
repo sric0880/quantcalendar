@@ -27,6 +27,7 @@ def test_tradedays():
     assert cal.get_tradeday_last(to_seconds(1990,1,1)) is None
     assert cal.get_tradedays_between(to_seconds(2024, 9, 13), to_seconds(2024, 9, 17)) == [to_seconds(2024, 9, 13)]
     assert cal.get_tradedays_between(to_seconds(2024, 9, 13), to_seconds(2024, 9, 18)) == [to_seconds(2024, 9, 13), to_seconds(2024, 9, 18)]
+    assert cal.get_tradedays_count(to_seconds(2024, 9, 13), to_seconds(2024, 9, 18)) == 2
     month_ends = [ to_seconds(2024, 1, 31), to_seconds(2024, 2, 29), to_seconds(2024, 3, 29), ]
     month_begins = [ to_seconds(2024, 1, 2), to_seconds(2024, 2, 1), to_seconds(2024, 3, 1), ]
     week_ends = [ to_seconds(2024, 1, 5), to_seconds(2024, 1, 12), to_seconds(2024, 1, 19), ]

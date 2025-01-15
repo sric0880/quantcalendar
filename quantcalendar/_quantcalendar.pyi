@@ -15,6 +15,11 @@ class PyCalendar:
         get trade days which are between [`start`, `end`]
         """
 
+    def get_tradedays_count(self, start: int, end: int) -> int:
+        """
+        get the count of trade days that are between [`start`, `end`]
+        """
+
     def get_tradeday_next(self, dt: int) -> int:
         """get next trade day, include `dt`"""
 
