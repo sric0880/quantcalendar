@@ -150,7 +150,7 @@ class PyCalendar:
          - weekday: monday to sunday [1, 7]
          """
 
-    def get_bartime_next(self, interval: int, dt: Union[float|int]) -> int:
+    def get_bartime_next(self, interval: int, dt: Union[float, int]) -> int:
         """ get current bartime, include `dt`
 
         Params:
@@ -158,7 +158,7 @@ class PyCalendar:
          * interval: interval seconds of bars
         """
 
-    def get_bartimes_gte(self, interval: int, start: Union[float|int], count: int=2**32-1) -> list[int]:
+    def get_bartimes_gte(self, interval: int, start: Union[float, int], count: int=2**32-1) -> list[int]:
         """ get `count` bartimes that are >= `start`
 
         Params:
@@ -167,7 +167,7 @@ class PyCalendar:
          * count: max count to get
         """
 
-    def get_bartimes_between(self, interval: int, start: Union[float|int], end: Union[float|int]) -> list[int]:
+    def get_bartimes_between(self, interval: int, start: Union[float, int], end: Union[float, int]) -> list[int]:
         """ get bartimes that are all in [`start`, `end`)
 
         Params:
@@ -176,7 +176,7 @@ class PyCalendar:
          * end: end timestamp
         """
 
-    def get_next_open_close(self, dt: Union[float|int]) -> tuple[int, int]:
+    def get_next_open_close(self, dt: Union[float, int]) -> tuple[int, int]:
         """ 给定时间`dt`, 获取下一次(开盘, 收盘)时间。休息时间不算是收盘，每天只有一次开盘收盘时间。
 
         Params:
@@ -186,7 +186,7 @@ class PyCalendar:
          - pair(开盘, 收盘)时间
         """
 
-    def get_next_session(self, dt: Union[float|int]) -> tuple[int, int]:
+    def get_next_session(self, dt: Union[float, int]) -> tuple[int, int]:
         """ 给定时间`dt`, 获取下一次(开盘, 收盘)。休息时间段也算是收盘
 
         Params:
@@ -211,14 +211,14 @@ class PyCalendar:
     def get_intervals(self) -> list[int]:
         """ 返回K线间隔 """
 
-    def is_trading(self, dt: Union[float|int]) -> bool:
+    def is_trading(self, dt: Union[float, int]) -> bool:
         """ 判断时间`dt`是否正在交易中
 
         Params:
          - `dt`: 时间必须是交易所本地时间 milliseconds in int or seconds in float
         """
 
-    def is_trading_day(self, dt: Union[float|int]) -> bool:
+    def is_trading_day(self, dt: Union[float, int]) -> bool:
         """
         判断是否交易日。如果`is_trading`返回true，那么`is_trading_day`必然返回true，反过来不一定成立。
         但是当`is_trading_day`返回false，那么`is_trading`必然返回false。
@@ -228,7 +228,7 @@ class PyCalendar:
          - `dt`: milliseconds in int or seconds in float
         """
 
-    def is_trading_time(self, dt: Union[float|int]) -> bool:
+    def is_trading_time(self, dt: Union[float, int]) -> bool:
         """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
 
         Params:
