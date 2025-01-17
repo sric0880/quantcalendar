@@ -25,8 +25,12 @@ if(DEFINED SKBUILD)
   message(STATUS "The project is built using scikit-build")
   # PythonExtensions @see https://scikit-build.readthedocs.io/en/latest/cmake-modules/PythonExtensions.html
   find_package(PythonExtensions REQUIRED)
+  # NumPy @see https://scikit-build.readthedocs.io/en/latest/cmake-modules/NumPy.html
+  find_package(NumPy REQUIRED)
   find_package(Cython REQUIRED)
 
+  include_directories(${NumPy_INCLUDE_DIRS})
+  add_compile_definitions(NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION)
   # Generate pxi template class
   set(CALENDAR_DATA_CLASS "DatesArray")
   set(DEFAULT_COUNT "=2**32-1")

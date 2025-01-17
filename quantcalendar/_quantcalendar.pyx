@@ -4,6 +4,7 @@
 from libcpp.utility cimport move
 from ._quantcalendar cimport CalendarAstock, CalendarCTP, Time7x24Calendar
 
+include "_np_datetime.pxi"
 include "_quantcalendar_DatesArray.pxi"
 include "_quantcalendar_Date7x24Array.pxi"
 

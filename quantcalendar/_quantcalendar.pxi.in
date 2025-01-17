@@ -302,7 +302,7 @@ cdef class PyCalendar_${CALENDAR_DATA_CLASS}:
         return self.c_cal.GetTimezone().decode("utf8")
 
     def get_intervals(self):
-        return self.c_cal.GetIntervals();
+        return self.c_cal.GetIntervals()
 
     def is_trading(self, dt):
         if isinstance(dt, float):
