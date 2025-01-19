@@ -5,8 +5,9 @@ from datetime import date, datetime, time, timezone
 import pandas as pd
 import pytest
 import quantdata as qd
+from datetime_helper import to_seconds
 
-from quantcalendar import CalendarCTP, bar_unit, to_seconds, to_timepoint
+from quantcalendar import CalendarCTP, bar_unit
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -32,16 +33,6 @@ def _ctp_close_time(product_id, year, month, day):
                 date(year, month, day), time(15), tzinfo=timezone.utc
             ).timestamp()
         )
-
-
-_ctp_get_open_close_queries = [
-    to_timepoint(2024, 9, 12, 20, 59, 59),
-    to_timepoint(2024, 9, 12, 21),
-    to_timepoint(2024, 9, 13, 15),
-    to_timepoint(2024, 9, 13, 21, 0, 1),
-    to_timepoint(2024, 9, 18, 8, 59, 59),
-    to_timepoint(2024, 9, 18, 9, 0, 0),
-]
 
 
 def _ctp_get_close_answers(product_id):
@@ -91,30 +82,39 @@ def test_has_night():
 
 # fmt: off
 @pytest.mark.parametrize("product_id", ["", "IH", "AG"])
-def test_trading_time(product_id):
+def test_trading_time(product_id, to_datetime64):
     cal = CalendarCTP(product_id)
     print(cal)
     # 2023-06-22 端午节
     # 2024-09-14 中秋节
     # 夜盘
-    assert cal.is_trading(to_timepoint(2023, 6, 30)) == (product_id != "IH")
-    assert cal.is_trading(to_timepoint(2023, 6, 30, 23, 59, 59)) == (product_id != "IH")
-    assert cal.is_trading(to_timepoint(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
-    assert cal.is_trading_day(to_timepoint(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 20, 30, 0)) == False
-    assert cal.is_trading(to_timepoint(2023, 6, 22)) == False
-    assert cal.is_trading(to_timepoint(2024, 9, 13, 21)) == False
+    assert cal.is_trading(to_datetime64(2023, 6, 30)) == (product_id != "IH")
+    assert cal.is_trading(to_datetime64(2023, 6, 30, 23, 59, 59)) == (product_id != "IH")
+    assert cal.is_trading(to_datetime64(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
+    assert cal.is_trading_day(to_datetime64(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 20, 30, 0)) == False
+    assert cal.is_trading(to_datetime64(2023, 6, 22)) == False
+    assert cal.is_trading(to_datetime64(2024, 9, 13, 21)) == False
 
     # 日盘
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 9, 0, 0)) == (product_id != "IH")
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 9, 30, 0))
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 10, 20, 0)) == (product_id != "AG")
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 10, 15, 0))
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 10, 30, 0))
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 14, 55, 0))
-    assert cal.is_trading(to_timepoint(2023, 6, 21, 15, 0, 0))
-    assert cal.is_trading(to_timepoint(2023, 6, 22, 9, 0, 0)) == False
-    assert cal.is_trading(to_timepoint(2023, 6, 22, 9, 30, 0)) == False
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 9, 0, 0)) == (product_id != "IH")
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 9, 30, 0))
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 10, 20, 0)) == (product_id != "AG")
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 10, 15, 0))
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 10, 30, 0))
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 14, 55, 0))
+    assert cal.is_trading(to_datetime64(2023, 6, 21, 15, 0, 0))
+    assert cal.is_trading(to_datetime64(2023, 6, 22, 9, 0, 0)) == False
+    assert cal.is_trading(to_datetime64(2023, 6, 22, 9, 30, 0)) == False
+
+    _ctp_get_open_close_queries = [
+        to_datetime64(2024, 9, 12, 20, 59, 59),
+        to_datetime64(2024, 9, 12, 21),
+        to_datetime64(2024, 9, 13, 15),
+        to_datetime64(2024, 9, 13, 21, 0, 1),
+        to_datetime64(2024, 9, 18, 8, 59, 59),
+        to_datetime64(2024, 9, 18, 9, 0, 0),
+    ]
 
     for q, ans in zip(
         _ctp_get_open_close_queries,
@@ -134,7 +134,7 @@ def to_product_id(symbol: str):
     return symbol[:i]
 
 
-def test_next_bartime():
+def test_next_bartime(to_datetime64):
     path = "tests/bartime_answers"
 
     for pickle_file in os.listdir(path):
@@ -154,24 +154,24 @@ def test_next_bartime():
             for q, ans, value in zip(
                 answer.index,
                 answer.map(lambda x: int(pd.Timestamp.timestamp(x))),
-                answer.index.map(lambda x: cal.get_bartime_next(i, x.timestamp())),
+                answer.index.map(lambda x: cal.get_bartime_next(i, x.to_datetime64())),
             ):
                 assert ans == value, f"{pickle_file} {q}: {ans} != {value}"
             print(f"{pickle_file} pass")
             # test bartime
             bartime_testcases = [
                 (
-                    to_timepoint(2024, 10, 1),
+                    to_datetime64(2024, 10, 1),
                     _ctp_close_time(product_id, 2024, 10, 8),
                     bar_unit.day,
                 ),
                 (
-                    to_timepoint(2024, 10, 6),
+                    to_datetime64(2024, 10, 6),
                     _ctp_close_time(product_id, 2024, 10, 11),
                     bar_unit.week,
                 ),
                 (
-                    to_timepoint(2024, 10, 11),
+                    to_datetime64(2024, 10, 11),
                     _ctp_close_time(product_id, 2024, 10, 31),
                     bar_unit.mon,
                 ),
@@ -193,40 +193,40 @@ def hourly_bartimes(year, mon, day):
         to_seconds(year, mon, day, 22),
         to_seconds(year, mon, day, 23) ]
 
-def test_get_bartimes():
+def test_get_bartimes(to_datetime64):
     cal = CalendarCTP("")
-    bartimes = cal.get_bartimes_gte(bar_unit.mon, to_timepoint(2024, 9, 13), count=2)
+    bartimes = cal.get_bartimes_gte(bar_unit.mon, to_datetime64(2024, 9, 13), count=2)
     assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
     assert bartimes[1] == to_seconds(2024, 10, 31, 15, 15)
 
     # 2024年9月30这周只有一天交易日，是周初，也是周末
-    bartimes = cal.get_bartimes_gte(bar_unit.week, to_timepoint(2024, 9, 30), count=2)
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_datetime64(2024, 9, 30), count=2)
     assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
     assert bartimes[1] == to_seconds(2024, 10, 11, 15, 15)
-    bartimes = cal.get_bartimes_gte(bar_unit.week, to_timepoint(2024, 10, 1), count=2)
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_datetime64(2024, 10, 1), count=2)
     assert bartimes[0] == to_seconds(2024, 10, 11, 15, 15)
     assert bartimes[1] == to_seconds(2024, 10, 18, 15, 15)
 
-    bartimes = cal.get_bartimes_gte(bar_unit.day, to_timepoint(2024, 9, 30), count=30)
+    bartimes = cal.get_bartimes_gte(bar_unit.day, to_datetime64(2024, 9, 30), count=30)
     assert len(bartimes) == 30
     assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
     assert bartimes[1] == to_seconds(2024, 10, 8, 15, 15)
 
     cal = CalendarCTP("ag")
     # 周4
-    bartimes = cal.get_bartimes_between(bar_unit.hour, to_timepoint(2024, 9, 12), to_timepoint(2024, 9, 13))
+    bartimes = cal.get_bartimes_between(bar_unit.hour, to_datetime64(2024, 9, 12), to_datetime64(2024, 9, 13))
     assert bartimes == hourly_bartimes(2024, 9, 12)
 
     # 周五
-    bartimes = cal.get_bartimes_between(bar_unit.hour, to_timepoint(2024, 9, 13), to_timepoint(2024, 9, 14))
+    bartimes = cal.get_bartimes_between(bar_unit.hour, to_datetime64(2024, 9, 13), to_datetime64(2024, 9, 14))
     assert bartimes == hourly_bartimes(2024, 9, 13)[:-2]
 
     # 周一
-    bartimes = cal.get_bartimes_between(bar_unit.hour, to_timepoint(2024, 9, 23), to_timepoint(2024, 9, 24))
+    bartimes = cal.get_bartimes_between(bar_unit.hour, to_datetime64(2024, 9, 23), to_datetime64(2024, 9, 24))
     assert bartimes == hourly_bartimes(2024, 9, 23)[3:]
 
     # 跨越国庆节
-    bartimes = cal.get_bartimes_between(4*bar_unit.hour, to_timepoint(2024, 9, 30), to_timepoint(2024, 10, 9))
+    bartimes = cal.get_bartimes_between(4*bar_unit.hour, to_datetime64(2024, 9, 30), to_datetime64(2024, 10, 9))
     assert len(bartimes) == 4
     assert bartimes[0] == to_seconds(2024, 9, 30, 13, 45)
     assert bartimes[1] == to_seconds(2024, 9, 30, 15)

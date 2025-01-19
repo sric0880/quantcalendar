@@ -1,9 +1,19 @@
-from datetime import datetime, timezone
-
 from ._quantcalendar import PyCalendar as Calendar  # only used for annotation
 from ._quantcalendar import PyCalendarAstock as CalendarAstock
 from ._quantcalendar import PyCalendarCTP as CalendarCTP
 from ._quantcalendar import PyTime7x24Calendar as Time7x24Calendar
+from ._quantcalendar import (
+    timedelta_ms,
+    timedelta_ns,
+    timedelta_s,
+    timedelta_us,
+    to_daily,
+    timestamp_s,
+    timestamp_ns,
+    timestamp_ms,
+    timestamp_us,
+    combine,
+)
 
 
 class bar_unit:
@@ -15,32 +25,20 @@ class bar_unit:
     mon = 30 * 86400
 
 
-def to_seconds(year, month, day, hour=0, minute=0, second=0):
-    """return integer seconds"""
-    dt = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
-    return int(dt.timestamp())
-
-
-def to_timepoint(year, month, day, hour=0, minute=0, second=0, microsecond=0):
-    """return float timestamp"""
-    return datetime(
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-        microsecond=microsecond,
-        tzinfo=timezone.utc,
-    ).timestamp()
-
-
 __all__ = [
     "Calendar",
     "CalendarAstock",
     "CalendarCTP",
     "Time7x24Calendar",
-    "to_seconds",
-    "to_timepoint",
     "bar_unit",
+    "timedelta_s",
+    "timedelta_ms",
+    "timedelta_us",
+    "timedelta_ns",
+    "to_daily",
+    "timestamp_s",
+    "timestamp_ns",
+    "timestamp_ms",
+    "timestamp_us",
+    "combine",
 ]

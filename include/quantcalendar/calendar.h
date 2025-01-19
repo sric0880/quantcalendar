@@ -66,6 +66,8 @@ public:
    */
   std::vector<sec_t> GetBartimes(seconds interval, time_point start, time_point end) const
   {
+    if (start > end)
+      throw InvalidTimeOrder(start.time_since_epoch().count(), end.time_since_epoch().count());
     return GetBartimesImpl(interval, start, 0, end);
   }
   /**

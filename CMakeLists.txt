@@ -30,7 +30,6 @@ if(DEFINED SKBUILD)
   find_package(Cython REQUIRED)
 
   include_directories(${NumPy_INCLUDE_DIRS})
-  add_compile_definitions(NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION)
   # Generate pxi template class
   set(CALENDAR_DATA_CLASS "DatesArray")
   set(DEFAULT_COUNT "=2**32-1")
@@ -40,6 +39,7 @@ if(DEFINED SKBUILD)
   configure_file("quantcalendar/_quantcalendar.pxi.in" "${CMAKE_CURRENT_SOURCE_DIR}/quantcalendar/_quantcalendar_${CALENDAR_DATA_CLASS}.pxi")
 
   add_cython_target(_quantcalendar "quantcalendar/_quantcalendar.pyx" CXX)
+  add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
   add_library(_quantcalendar MODULE "src/calendar.cpp" "src/dates.cpp" ${_quantcalendar})
   target_link_libraries(_quantcalendar
     quantdata::qddatetime

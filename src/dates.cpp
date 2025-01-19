@@ -377,7 +377,6 @@ inline void pre_week(Date &date)
 inline void update_current(Date7x24Array::iterator::value_type &current)
 {
   current.second.cdate_ = current.second.dt_.date.isocalendar();
-  current.second.dt_.calc_timestamp();
   current.first = current.second.dt_.to_timestamp();
 }
 

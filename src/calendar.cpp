@@ -137,6 +137,8 @@ void Calendar<Data>::CalcBartimes()
 template <class Data>
 void Calendar<Data>::GenerateDailyBartimes(typename Data::iterator &&it, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const
 {
+  if (it.is_end())
+    throw OutOfCalendar();
   auto close_t = open_close_sessions_[0].second;
   do
   {
@@ -166,6 +168,8 @@ void Calendar<Data>::GenerateDailyBartimes(typename Data::iterator &&it, time_po
 template <class Data>
 void Calendar<Data>::GenerateMinuteBartimes(typename Data::iterator &&it, int interval, time_point start_dt, size_t count, time_point end, std::vector<sec_t> &ret) const
 {
+  if (it.is_end())
+    throw OutOfCalendar();
   auto &times = bartimes_.at(interval);
   do
   {
@@ -250,6 +254,8 @@ session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
   sec_t next_sos_dt = -1;
   sec_t next_eos_dt = -1;
   auto it = tradedays->Upper(start_day);
+  if (it.is_end())
+    throw OutOfCalendar();
   do
   {
     sec_t day = (*it).first;

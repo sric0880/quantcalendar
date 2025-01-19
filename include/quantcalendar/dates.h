@@ -11,9 +11,9 @@
 NS_QMC_BEGIN
 
 using namespace std::literals::chrono_literals;
-using datetime = Datetime<>;
+using datetime = Datetime<seconds>;
 using calendar_date = IsoCalendarDate;
-using sec_t = seconds::rep;
+using sec_t = datetime::precision_type::rep;
 using date_status_item = std::tuple<sec_t /*timestamp*/, char /*status*/>;
 template <class Iter>
 using dpair = std::pair<Iter, Iter>;
@@ -43,7 +43,7 @@ inline bool is_daily(sec_t dt)
 
 struct DateNode
 {
-  DateNode(sec_t ts, uint8_t status) : dt_(datetime::precision(ts)), cdate_(dt_.date.isocalendar()), status_(status)
+  DateNode(sec_t ts, uint8_t status) : dt_(datetime::precision_type(ts)), cdate_(dt_.date.isocalendar()), status_(status)
   {
     SetTrading(status == 1);
   }
@@ -159,22 +159,52 @@ public:
   void Init(const std::vector<date_status_item> &arr);
   tradedays_iterator Upper(sec_t dt) const;
   tradedays_iterator Lower(sec_t dt) const;
-  dpair<tradedays_iterator> Between(sec_t start, sec_t end) const { return {Upper(start), Lower(end)}; };
+  dpair<tradedays_iterator> Between(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {Upper(start), Lower(end)};
+  };
   month_end_iterator MonthEndUpper(sec_t dt) const;
   month_end_iterator MonthEndLower(sec_t dt) const;
-  dpair<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const { return {MonthEndUpper(start), MonthEndLower(end)}; };
+  dpair<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {MonthEndUpper(start), MonthEndLower(end)};
+  };
   month_begin_iterator MonthBeginUpper(sec_t dt) const;
   month_begin_iterator MonthBeginLower(sec_t dt) const;
-  dpair<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const { return {MonthBeginUpper(start), MonthBeginLower(end)}; };
+  dpair<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {MonthBeginUpper(start), MonthBeginLower(end)};
+  };
   week_end_iterator WeekEndUpper(sec_t dt) const;
   week_end_iterator WeekEndLower(sec_t dt) const;
-  dpair<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const { return {WeekEndUpper(start), WeekEndLower(end)}; };
+  dpair<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {WeekEndUpper(start), WeekEndLower(end)};
+  };
   week_begin_iterator WeekBeginUpper(sec_t dt) const;
   week_begin_iterator WeekBeginLower(sec_t dt) const;
-  dpair<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const { return {WeekBeginUpper(start), WeekBeginLower(end)}; };
+  dpair<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {WeekBeginUpper(start), WeekBeginLower(end)};
+  };
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const;
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const;
-  dpair<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const { return {WeekDayUpper(start, weekday), WeekDayLower(end, weekday)}; };
+  dpair<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {WeekDayUpper(start, weekday), WeekDayLower(end, weekday)};
+  };
   const DateNode &At(sec_t dt) const { return calendar_data_.at(dt); };
   const_map_iterator cbegin() const { return calendar_data_.cbegin(); }
   const_map_iterator cend() const { return calendar_data_.cend(); }
@@ -187,6 +217,8 @@ private:
   template <typename Iter, typename... Args>
   Iter SafeFind(sec_t dt, Args... args) const
   {
+    if (calendar_data_.empty())
+      throw CalendarNotInit();
     return Iter{calendar_data_.find(dt), this, std::forward<Args>(args)...};
   }
 };
@@ -195,7 +227,7 @@ int num_days_month(int year, int month);
 
 struct AllDayTradingNode
 {
-  AllDayTradingNode(sec_t ts) : dt_(datetime::precision(ts)), cdate_(dt_.date.isocalendar()) {}
+  AllDayTradingNode(sec_t ts) : dt_(datetime::precision_type(ts)), cdate_(dt_.date.isocalendar()) {}
   datetime dt_;
   calendar_date cdate_;
   bool IsTrading() const { return true; };
@@ -282,22 +314,52 @@ public:
 
   tradedays_iterator Upper(sec_t dt) const { return SafeFind<Date7x24Array::tradedays_iterator>(dt); }
   tradedays_iterator Lower(sec_t dt) const { return Upper(dt); };
-  dpair<tradedays_iterator> Between(sec_t start, sec_t end) const { return {Upper(start), Lower(end)}; };
+  dpair<tradedays_iterator> Between(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {Upper(start), Lower(end)};
+  };
   month_end_iterator MonthEndUpper(sec_t dt) const;
   month_end_iterator MonthEndLower(sec_t dt) const;
-  dpair<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const { return {MonthEndUpper(start), MonthEndLower(end)}; };
+  dpair<month_end_iterator> MonthEndBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {MonthEndUpper(start), MonthEndLower(end)};
+  };
   month_begin_iterator MonthBeginUpper(sec_t dt) const;
   month_begin_iterator MonthBeginLower(sec_t dt) const;
-  dpair<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const { return {MonthBeginUpper(start), MonthBeginLower(end)}; };
+  dpair<month_begin_iterator> MonthBeginBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {MonthBeginUpper(start), MonthBeginLower(end)};
+  };
   week_end_iterator WeekEndUpper(sec_t dt) const { return WeekDayUpper(dt, 7); }
   week_end_iterator WeekEndLower(sec_t dt) const { return WeekDayLower(dt, 7); }
-  dpair<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const { return {WeekEndUpper(start), WeekEndLower(end)}; };
+  dpair<week_end_iterator> WeekEndBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {WeekEndUpper(start), WeekEndLower(end)};
+  };
   week_begin_iterator WeekBeginUpper(sec_t dt) const { return WeekDayUpper(dt, 1); }
   week_begin_iterator WeekBeginLower(sec_t dt) const { return WeekDayLower(dt, 1); }
-  dpair<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const { return {WeekBeginUpper(start), WeekBeginLower(end)}; };
+  dpair<week_begin_iterator> WeekBeginBetween(sec_t start, sec_t end) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {WeekBeginUpper(start), WeekBeginLower(end)};
+  };
   weekday_iterator WeekDayUpper(sec_t dt, int weekday) const;
   weekday_iterator WeekDayLower(sec_t dt, int weekday) const;
-  dpair<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const { return {WeekDayUpper(start, weekday), WeekDayLower(end, weekday)}; };
+  dpair<weekday_iterator> WeekDayBetween(sec_t start, sec_t end, int weekday) const
+  {
+    if (start > end)
+      throw InvalidTimeOrder(start, end);
+    return {WeekDayUpper(start, weekday), WeekDayLower(end, weekday)};
+  };
 
 private:
   template <typename Iter, typename... Args>

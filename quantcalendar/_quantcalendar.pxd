@@ -7,6 +7,12 @@ from numpy cimport npy_datetime, NPY_DATETIMEUNIT
 cdef extern from "<chrono>" namespace "std::chrono" nogil:
 	cdef cppclass seconds:
 		seconds(long long)
+	cdef cppclass milliseconds:
+		pass
+	cdef cppclass microseconds:
+		pass
+	cdef cppclass nanoseconds:
+		pass
 	cdef cppclass system_clock:
 		pass
 	cdef cppclass time_point[_Clock, _Duration=*]:
@@ -19,14 +25,17 @@ cdef extern from "quantdata/datetime.h" nogil:
 		int year
 		int mon
 		int day
-	cdef cppclass Time:
+	cdef cppclass Time[T]:
 		int hour
 		int min
 		int sec
 		int subseconds
-	cdef cppclass Datetime:
+	cdef cppclass Datetime[T]:
+		Datetime(int year, int mon, int day, int hour = 0, int min = 0, int sec = 0) except +
+		Datetime(int year, int mon, int day, int hour, int min, int sec, int subseconds) except +
 		Date date
-		Time time
+		Time[T] time
+		long long to_timestamp()
 	cdef tp fromtimestamp(long long ts)
 	cdef tp fromtimestamp(double ts)
 	cdef tp fromtimestamp_milli(long long ts)
@@ -73,24 +82,24 @@ cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 			weekday_iterator operator++()
 			weekday_iterator operator--()
 
-		tradedays_iterator Upper(sec_t dt)
-		tradedays_iterator Lower(sec_t dt)
-		pair[tradedays_iterator, tradedays_iterator] Between(sec_t start, sec_t end)
-		month_end_iterator MonthEndUpper(sec_t dt)
-		month_end_iterator MonthEndLower(sec_t dt)
-		pair[month_end_iterator, month_end_iterator] MonthEndBetween(sec_t start, sec_t end)
-		month_begin_iterator MonthBeginUpper(sec_t dt)
-		month_begin_iterator MonthBeginLower(sec_t dt)
-		pair[month_begin_iterator, month_begin_iterator] MonthBeginBetween(sec_t start, sec_t end)
-		week_end_iterator WeekEndUpper(sec_t dt)
-		week_end_iterator WeekEndLower(sec_t dt)
-		pair[week_end_iterator, week_end_iterator] WeekEndBetween(sec_t start, sec_t end)
-		week_begin_iterator WeekBeginUpper(sec_t dt)
-		week_begin_iterator WeekBeginLower(sec_t dt)
-		pair[week_begin_iterator, week_begin_iterator] WeekBeginBetween(sec_t start, sec_t end)
-		weekday_iterator WeekDayUpper(sec_t dt, int weekday)
-		weekday_iterator WeekDayLower(sec_t dt, int weekday)
-		pair[weekday_iterator, weekday_iterator] WeekDayBetween(sec_t start, sec_t end, int weekday)
+		tradedays_iterator Upper(sec_t dt) except +
+		tradedays_iterator Lower(sec_t dt) except +
+		pair[tradedays_iterator, tradedays_iterator] Between(sec_t start, sec_t end) except +
+		month_end_iterator MonthEndUpper(sec_t dt) except +
+		month_end_iterator MonthEndLower(sec_t dt) except +
+		pair[month_end_iterator, month_end_iterator] MonthEndBetween(sec_t start, sec_t end) except +
+		month_begin_iterator MonthBeginUpper(sec_t dt) except +
+		month_begin_iterator MonthBeginLower(sec_t dt) except +
+		pair[month_begin_iterator, month_begin_iterator] MonthBeginBetween(sec_t start, sec_t end) except +
+		week_end_iterator WeekEndUpper(sec_t dt) except +
+		week_end_iterator WeekEndLower(sec_t dt) except +
+		pair[week_end_iterator, week_end_iterator] WeekEndBetween(sec_t start, sec_t end) except +
+		week_begin_iterator WeekBeginUpper(sec_t dt) except +
+		week_begin_iterator WeekBeginLower(sec_t dt) except +
+		pair[week_begin_iterator, week_begin_iterator] WeekBeginBetween(sec_t start, sec_t end) except +
+		weekday_iterator WeekDayUpper(sec_t dt, int weekday) except +
+		weekday_iterator WeekDayLower(sec_t dt, int weekday) except +
+		pair[weekday_iterator, weekday_iterator] WeekDayBetween(sec_t start, sec_t end, int weekday) except +
 
 	cdef cppclass AllDayTradingNode:
 		Datetime dt_
@@ -123,22 +132,22 @@ cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 
 		tradedays_iterator Upper(sec_t dt)
 		tradedays_iterator Lower(sec_t dt)
-		pair[tradedays_iterator, tradedays_iterator] Between(sec_t start, sec_t end)
+		pair[tradedays_iterator, tradedays_iterator] Between(sec_t start, sec_t end) except +
 		month_end_iterator MonthEndUpper(sec_t dt)
 		month_end_iterator MonthEndLower(sec_t dt)
-		pair[month_end_iterator, month_end_iterator] MonthEndBetween(sec_t start, sec_t end)
+		pair[month_end_iterator, month_end_iterator] MonthEndBetween(sec_t start, sec_t end) except +
 		month_begin_iterator MonthBeginUpper(sec_t dt)
 		month_begin_iterator MonthBeginLower(sec_t dt)
-		pair[month_begin_iterator, month_begin_iterator] MonthBeginBetween(sec_t start, sec_t end)
+		pair[month_begin_iterator, month_begin_iterator] MonthBeginBetween(sec_t start, sec_t end) except +
 		week_end_iterator WeekEndUpper(sec_t dt)
 		week_end_iterator WeekEndLower(sec_t dt)
-		pair[week_end_iterator, week_end_iterator] WeekEndBetween(sec_t start, sec_t end)
+		pair[week_end_iterator, week_end_iterator] WeekEndBetween(sec_t start, sec_t end) except +
 		week_begin_iterator WeekBeginUpper(sec_t dt)
 		week_begin_iterator WeekBeginLower(sec_t dt)
-		pair[week_begin_iterator, week_begin_iterator] WeekBeginBetween(sec_t start, sec_t end)
+		pair[week_begin_iterator, week_begin_iterator] WeekBeginBetween(sec_t start, sec_t end) except +
 		weekday_iterator WeekDayUpper(sec_t dt, int weekday)
 		weekday_iterator WeekDayLower(sec_t dt, int weekday)
-		pair[weekday_iterator, weekday_iterator] WeekDayBetween(sec_t start, sec_t end, int weekday)
+		pair[weekday_iterator, weekday_iterator] WeekDayBetween(sec_t start, sec_t end, int weekday) except +
 
 
 cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:

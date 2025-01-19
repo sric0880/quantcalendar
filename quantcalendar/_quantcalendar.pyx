@@ -41,13 +41,13 @@ cdef class PyTime7x24Calendar(PyCalendar_Date7x24Array):
     def __cinit__(self):
         self.c_cal = &Time7x24Calendar.GetInstance(b"")
 
-    def is_trading(self, dt: float):
+    def is_trading(self, dt):
         return True
 
-    def is_trading_day(self, dt: float):
+    def is_trading_day(self, dt):
         return True
 
-    def is_trading_time(self, dt: float):
+    def is_trading_time(self, dt):
         return True
 
     def __str__(self) -> str:

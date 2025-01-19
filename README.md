@@ -14,9 +14,33 @@
 ## 特性
 
 - 目前支持A股、中国期货、7x24全天候交易日历
-- 支持C++、Python(Cython封装)，相比纯Python实现的版本，性能提升5-50倍（不同接口不同）
+- 支持C++、Python(Cython封装)，相比纯Python实现的版本【已删除】，性能提升5-50倍（不同接口不同）
 - 支持不同证券品种生成不同交易日历，比如中国期货
 - 支持查询不同周期的K线时间。支持和东方财富期货、新浪期货相同的K线时间
+- 时间相关函数对比，timestamp_xx系列函数效率高于Python；而combine和timedelta系列函数Python效率高于Cython实现
+
+```python
+from quantcalendar import timestamp_us
+from numpy import datetime64
+from datetime import datetime,timezone
+
+
+d1 = datetime64('2011-07-18', "s")
+d3 = datetime(2011, 7, 18, tzinfo=timezone.utc)
+print(timestamp_us(d1))
+print(d3.timestamp())
+print(timestamp_us(d3))
+# 1310947200000000
+# 1310947200000000
+# 1310947200000000
+
+%timeit timestamp_us(d1)
+# 151 ns ± 18.5 ns per loop (mean ± std. dev. of 7 runs, 1,000,000 loops each)
+%timeit int(d3.timestamp()*1000000)
+# 831 ns ± 148 ns per loop (mean ± std. dev. of 7 runs, 1,000,000 loops each)
+%timeit timestamp_us(d3)
+# 145 ns ± 6.45 ns per loop (mean ± std. dev. of 7 runs, 10,000,000 loops each)
+```
 
 ## 安装
 
