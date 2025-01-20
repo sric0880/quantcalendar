@@ -1,9 +1,9 @@
 from datetime import datetime
 
+import download_tqsdk
+import download_tushare
 import fire
 import quantdata as qd
-
-import download_tqsdk, download_tushare
 
 
 def update(
@@ -26,7 +26,7 @@ def update(
         for collection_name, data in download_tqsdk.download(tq_user, tq_pwd, end_dt):
             updating[collection_name] = data
 
-    with qd.mongo_connect(host, port, user, password) as mg:
+    with qd.open_mongodb(host=host, port=port, user=user, password=password) as mg:
         db = mg["quantcalendar"]
         for col, data in updating.items():
             db.drop_collection(col)
