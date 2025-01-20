@@ -7,14 +7,14 @@ import pytest
 import quantdata as qd
 from datetime_helper import to_seconds
 
-from quantcalendar import CalendarCTP, bar_unit
+from quantcalendar import CalendarCTP, bar_unit, timestamp_s
 
 
 @pytest.fixture(scope="module", autouse=True)
 def mongo_client():
-    with qd.open_mongodb(host="127.0.0.1", tz_aware=True):
+    with qd.open_mongodb(host="127.0.0.1"):
         days = qd.mongo_get_data("quantcalendar", "cn_future")
-        dates_arr = [(int(day["_id"].timestamp()), day["status"]) for day in days]
+        dates_arr = [(timestamp_s(day["_id"]), day["status"]) for day in days]
         sessions = qd.mongo_get_data("quantcalendar", "cn_future_sessions")
         sessions = [(s["_id"].encode("ascii"), s["market_time"]) for s in sessions]
         CalendarCTP.Init(dates_arr, sessions)
@@ -22,17 +22,9 @@ def mongo_client():
 
 def _ctp_close_time(product_id, year, month, day):
     if product_id == "" or product_id in ("T", "TS", "TF", "TL"):
-        return int(
-            datetime.combine(
-                date(year, month, day), time(15, 15), tzinfo=timezone.utc
-            ).timestamp()
-        )
+        return timestamp_s(datetime.combine(date(year, month, day), time(15, 15)))
     else:
-        return int(
-            datetime.combine(
-                date(year, month, day), time(15), tzinfo=timezone.utc
-            ).timestamp()
-        )
+        return timestamp_s(datetime.combine(date(year, month, day), time(15)))
 
 
 def _ctp_get_close_answers(product_id):

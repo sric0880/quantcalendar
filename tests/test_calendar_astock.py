@@ -3,14 +3,14 @@ import pytest
 import quantdata as qd
 from datetime_helper import to_seconds
 
-from quantcalendar import CalendarAstock, bar_unit
+from quantcalendar import CalendarAstock, bar_unit, timestamp_s
 
 
 @pytest.fixture(scope="module", autouse=True)
 def mongo_client():
-    with qd.open_mongodb(host="127.0.0.1", tz_aware=True):
+    with qd.open_mongodb(host="127.0.0.1"):
         days = qd.mongo_get_data("quantcalendar", "cn_stock")
-        dates_arr = [(int(day["_id"].timestamp()), day["status"]) for day in days]
+        dates_arr = [(timestamp_s(day["_id"]), day["status"]) for day in days]
         CalendarAstock.Init(dates_arr)
 
 
@@ -138,31 +138,33 @@ def test_exceptions(to_datetime64):
         cal.get_bartime_next(2 * bar_unit.day, to_datetime64(2024, 9, 13))
 
     # Out of calendar error
+    out_of_calendar_year = 2026
+    before_out_of_cal_year = 2025
     with pytest.raises(IndexError):
-        cal.get_tradeday_next(to_datetime64(2025, 1, 1))
+        cal.get_tradeday_next(to_datetime64(out_of_calendar_year, 1, 1))
     with pytest.raises(IndexError):
         cal.get_tradeday_last(to_datetime64(1990,1,1))
     with pytest.raises(IndexError):
-        # 2025, 1, 1 不会报错，因为以结束时间为K线时间，这个时间还是属于前一天的K线
-        cal.get_bartimes_between(bar_unit.hour, to_datetime64(2025, 1, 1, 0, 0, 0, 1), to_datetime64(2025, 1, 2))
+        # datetime(out_of_calendar_year, 1, 1) 不会报错，因为以结束时间为K线时间，这个时间还是属于前一天的K线
+        cal.get_bartimes_between(bar_unit.hour, to_datetime64(out_of_calendar_year, 1, 1, 0, 0, 0, 1), to_datetime64(out_of_calendar_year, 1, 2))
     with pytest.raises(IndexError):
         cal.get_bartime_next(bar_unit.hour, to_datetime64(2050, 1, 1))
     with pytest.raises(IndexError):
         # start of session is not found
-        cal.get_next_open_close(to_datetime64(2024, 12, 31, 12))
+        cal.get_next_open_close(to_datetime64(before_out_of_cal_year, 12, 31, 12))
     with pytest.raises(IndexError):
         # start of session is not found
-        cal.get_next_session(to_datetime64(2024, 12, 31, 14))
+        cal.get_next_session(to_datetime64(before_out_of_cal_year, 12, 31, 14))
     with pytest.raises(IndexError):
         # both start and end of session are not found
-        cal.get_next_session(to_datetime64(2025, 1, 1))
+        cal.get_next_session(to_datetime64(out_of_calendar_year, 1, 1))
     with pytest.raises(IndexError):
         cal.get_next_session(to_datetime64(2050, 1, 1))
     with pytest.raises(IndexError):
         # actually it's trading, but next start of session if not found
-        cal.is_trading(to_datetime64(2024, 12, 31, 15))
+        cal.is_trading(to_datetime64(before_out_of_cal_year, 12, 31, 15))
     with pytest.raises(IndexError):
-        cal.is_trading_day(to_datetime64(2025, 1, 1))
+        cal.is_trading_day(to_datetime64(out_of_calendar_year, 1, 1))
 
     # start > end
     with pytest.raises(ValueError):
