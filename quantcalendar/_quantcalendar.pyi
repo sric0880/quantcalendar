@@ -5,117 +5,117 @@ from numpy import datetime64, timedelta64
 
 # fmt: off
 class PyCalendar:
-    def get_tradedays_gte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_tradedays_gte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade days which >= `dt`
         """
 
-    def get_tradedays_lte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_tradedays_lte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade days which <= `dt`
         """
 
-    def get_tradedays_between(self, start: Union[datetime, datetime64], end: Union[datetime, datetime64]) -> list[int]:
+    def get_tradedays_between(self, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int]) -> list[int]:
         """
         get trade days which are between [`start`, `end`]
         """
 
-    def get_tradedays_count(self, start: Union[datetime, datetime64], end: Union[datetime, datetime64]) -> int:
+    def get_tradedays_count(self, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int]) -> int:
         """
         get the count of trade days that are between [`start`, `end`]
         """
 
-    def get_tradeday_next(self, dt: Union[datetime, datetime64]) -> int:
+    def get_tradeday_next(self, dt: Union[datetime, datetime64, int]) -> int:
         """get next trade day, include `dt`"""
 
-    def get_tradeday_last(self, dt: Union[datetime, datetime64]) -> int:
+    def get_tradeday_last(self, dt: Union[datetime, datetime64, int]) -> int:
         """get last trade day, include `dt`"""
 
-    def get_month_ends_gte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_month_ends_gte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade month end days which >= `dt`
         """
 
-    def get_month_ends_lte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_month_ends_lte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade month end days which <= `dt`
         """
 
-    def get_month_ends_between(self, start: Union[datetime, datetime64], end: Union[datetime, datetime64]) -> list[int]:
+    def get_month_ends_between(self, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int]) -> list[int]:
         """
         get month ends which are between [`start`, `end`]
         """
 
-    def get_month_end_next(self, dt: Union[datetime, datetime64])  -> int:
+    def get_month_end_next(self, dt: Union[datetime, datetime64, int])  -> int:
         """get next month end day, include `dt`"""
 
-    def get_month_end_last(self, dt: Union[datetime, datetime64])  -> int:
+    def get_month_end_last(self, dt: Union[datetime, datetime64, int])  -> int:
         """get last month end day, include `dt`"""
 
-    def get_month_begins_gte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_month_begins_gte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade month begin days which >= `dt`
         """
 
-    def get_month_begins_lte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_month_begins_lte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade month begin days which <= `dt`
         """
 
-    def get_month_begins_between(self, start: Union[datetime, datetime64], end: Union[datetime, datetime64] = None) -> list[int]:
+    def get_month_begins_between(self, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int] = None) -> list[int]:
         """
         get month begins which are between [`start`, `end`]
         """
 
-    def get_month_begin_next(self, dt: Union[datetime, datetime64])  -> int:
+    def get_month_begin_next(self, dt: Union[datetime, datetime64, int])  -> int:
         """get next month begin day, include `dt`"""
 
-    def get_month_begin_last(self, dt: Union[datetime, datetime64])  -> int:
+    def get_month_begin_last(self, dt: Union[datetime, datetime64, int])  -> int:
         """get last month begin day, include `dt`"""
 
-    def get_week_ends_gte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_week_ends_gte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade week end days which >= `dt`
         """
 
-    def get_week_ends_lte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_week_ends_lte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade week end days which <= `dt`
         """
 
-    def get_week_ends_between(self, start: Union[datetime, datetime64], end: Union[datetime, datetime64] = None) -> list[int]:
+    def get_week_ends_between(self, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int] = None) -> list[int]:
         """
         get week ends which are between [`start`, `end`]
         """
 
-    def get_week_end_next(self, dt: Union[datetime, datetime64])  -> int:
+    def get_week_end_next(self, dt: Union[datetime, datetime64, int])  -> int:
         """get next week end day, include `dt`"""
 
-    def get_week_end_last(self, dt: Union[datetime, datetime64])  -> int:
+    def get_week_end_last(self, dt: Union[datetime, datetime64, int])  -> int:
         """get last week end day, include `dt`"""
 
-    def get_week_begins_gte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_week_begins_gte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade week begin days which >= `dt`
         """
 
-    def get_week_begins_lte(self, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_week_begins_lte(self, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade week begin days which <= `dt`
         """
 
-    def get_week_begins_between(self, start: Union[datetime, datetime64], end: Union[datetime, datetime64] = None) -> list[int]:
+    def get_week_begins_between(self, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int] = None) -> list[int]:
         """
         get week begins which are between [`start`, `end`]
         """
 
-    def get_week_begin_next(self, dt: Union[datetime, datetime64])  -> int:
+    def get_week_begin_next(self, dt: Union[datetime, datetime64, int])  -> int:
         """get next week begin day, include `dt`"""
 
-    def get_week_begin_last(self, dt: Union[datetime, datetime64])  -> int:
+    def get_week_begin_last(self, dt: Union[datetime, datetime64, int])  -> int:
         """get last week begin day, include `dt`"""
 
-    def get_week_days_gte(self, weekday: int, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_week_days_gte(self, weekday: int, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade week days of `weekday` which >= `dt`
 
@@ -123,7 +123,7 @@ class PyCalendar:
          - weekday: monday to sunday [1, 7]
         """
 
-    def get_week_days_lte(self, weekday: int, dt: Union[datetime, datetime64], count: int = 2**32-1) -> list[int]:
+    def get_week_days_lte(self, weekday: int, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
         """
         get `count` trade week days of `weekday` which <= `dt`
 
@@ -131,7 +131,7 @@ class PyCalendar:
          - weekday: monday to sunday [1, 7]
         """
 
-    def get_week_days_between(self, weekday: int, start: Union[datetime, datetime64], end: Union[datetime, datetime64] = None) -> list[int]:
+    def get_week_days_between(self, weekday: int, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int] = None) -> list[int]:
         """
         get week days of `weekday` which are between [`start`, `end`]
 
@@ -139,14 +139,14 @@ class PyCalendar:
          - weekday: monday to sunday [1, 7]
         """
 
-    def get_week_day_next(self, weekday: int, dt: Union[datetime, datetime64])  -> int:
+    def get_week_day_next(self, weekday: int, dt: Union[datetime, datetime64, int])  -> int:
         """get next week day of `weekday`, include `dt`
 
         Params:
          - weekday: monday to sunday [1, 7]
         """
 
-    def get_week_day_last(self, weekday: int, dt: Union[datetime, datetime64])  -> int:
+    def get_week_day_last(self, weekday: int, dt: Union[datetime, datetime64, int])  -> int:
         """get last week day of `weekday`, include `dt`
 
         Params:
@@ -271,7 +271,7 @@ class PyTime7x24Calendar(PyCalendar_Date7x24Array):
 
 def to_daily(dt: Union[datetime, datetime64]) -> int:
     """
-    按天计算Unix timestamp
+    round to daily unix timestamp of the resolution seconds
     """
 
 def timestamp_s(dt: Union[datetime, datetime64]) -> int:

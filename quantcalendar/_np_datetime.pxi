@@ -177,8 +177,10 @@ cdef npy_datetime as_int64(object dt, NPY_DATETIMEUNIT creso):
     elif PyDateTime_Check(dt):
         self_creso = NPY_DATETIMEUNIT.NPY_FR_us
         value = pydatetime_to_unix_timestamp(dt)
+    elif isinstance(dt, int):
+        return <npy_datetime>dt
     else:
-        raise NotImplementedError("Only numpy.datetime64 is supported.")
+        raise NotImplementedError("Only [numpy.datetime64, python::datetime, int] is supported.")
 
     if self_creso == creso:
         return value
@@ -200,8 +202,10 @@ cdef npy_datetime as_int64_d(object dt, NPY_DATETIMEUNIT creso_first, NPY_DATETI
     elif PyDateTime_Check(dt):
         self_creso = NPY_DATETIMEUNIT.NPY_FR_us
         value = pydatetime_to_unix_timestamp(dt)
+    elif isinstance(dt, int):
+        return <npy_datetime>dt
     else:
-        raise NotImplementedError("Only numpy.datetime64 is supported.")
+        raise NotImplementedError("Only [numpy.datetime64, python::datetime, int] is supported.")
 
     if self_creso == creso_first:
         value = convert_reso(value, self_creso, creso_second)
@@ -231,7 +235,7 @@ cdef tp to_timepoint(object dt):
         return fromtimestamp_micro(pydatetime_to_unix_timestamp(dt))
         # return fromtimestamp(<double>dt.timestamp()) # local timezone if tzinfo is None
     else:
-        raise NotImplementedError("Only numpy.datetime64 and python's datetime are supported.")
+        raise NotImplementedError("Only [numpy.datetime64, python::datetime] are supported.")
 
 def timedelta_s(dt1, dt2):
     return as_int64(dt1, NPY_DATETIMEUNIT.NPY_FR_s) - as_int64(dt2, NPY_DATETIMEUNIT.NPY_FR_s)
