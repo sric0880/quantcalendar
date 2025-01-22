@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import pytest
 import quantdata as qd
@@ -171,3 +173,11 @@ def test_exceptions(to_datetime64):
         cal.get_bartimes_between(2 * bar_unit.hour, to_datetime64(2024, 9, 13), to_datetime64(2024, 9, 11))
     with pytest.raises(ValueError):
         cal.get_week_begins_between(to_datetime64(2024, 1, 15), to_datetime64(2024, 1, 1))
+
+
+def test_pickle():
+    cal = CalendarAstock()
+    bs = pickle.dumps({"calendar": cal})
+    dct = pickle.loads(bs)
+    assert isinstance(dct, dict) and "calendar" in dct
+    assert dct["calendar"].is_trading(np.datetime64("2007-01-04T14:59:59.999999")) == True

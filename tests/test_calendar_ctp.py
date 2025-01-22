@@ -1,6 +1,7 @@
 import os
+import pickle
 import re
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time
 
 import pandas as pd
 import pytest
@@ -224,3 +225,11 @@ def test_get_bartimes(to_datetime64):
     assert bartimes[1] == to_seconds(2024, 9, 30, 15)
     assert bartimes[2] == to_seconds(2024, 10, 8, 13, 45)
     assert bartimes[3] == to_seconds(2024, 10, 8, 15)
+
+
+def test_pickle():
+    cal = CalendarCTP("AG")
+    bs = pickle.dumps({"calendar": cal})
+    dct = pickle.loads(bs)
+    assert isinstance(dct, dict) and "calendar" in dct
+    assert dct["calendar"].is_trading(datetime(2023, 6, 30)) == True

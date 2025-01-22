@@ -16,6 +16,10 @@ cdef class PyCalendarAstock(PyCalendar_DatesArray):
     def __cinit__(self):
         self.c_cal = &CalendarAstock.GetInstance(b"")
 
+    def __reduce__(self):
+        # for support pickling
+        return (PyCalendarAstock,())
+
     @staticmethod
     def Init(dates_arr):
         CalendarAstock.Init(dates_arr)
@@ -24,8 +28,15 @@ cdef class PyCalendarAstock(PyCalendar_DatesArray):
         return super().__str__()
 
 cdef class PyCalendarCTP(PyCalendar_DatesArray):
+    cdef public str symbol
+
     def __cinit__(self, symbol):
+        self.symbol = symbol
         self.c_cal = &CalendarCTP.GetInstance(symbol.encode("ascii"))
+
+    def __reduce__(self):
+        # for support pickling
+        return (PyCalendarCTP,(self.symbol,))
 
     def has_night(self) -> bool:
         return (<CalendarCTP*>self.c_cal).HasNight()
@@ -40,6 +51,10 @@ cdef class PyCalendarCTP(PyCalendar_DatesArray):
 cdef class PyTime7x24Calendar(PyCalendar_Date7x24Array):
     def __cinit__(self):
         self.c_cal = &Time7x24Calendar.GetInstance(b"")
+
+    def __reduce__(self):
+        # for support pickling
+        return (PyTime7x24Calendar,())
 
     def is_trading(self, dt):
         return True
