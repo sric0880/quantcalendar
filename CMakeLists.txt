@@ -56,15 +56,56 @@ if(DEFINED SKBUILD)
 else()
   add_library(quantcalendar STATIC "src/calendar.cpp" "src/dates.cpp")
   target_link_libraries(quantcalendar
-    quantdata::qddatetime
-    fmt::fmt
-    unordered_dense::unordered_dense)
+    PUBLIC quantdata::qddatetime
+    PUBLIC fmt::fmt
+    PUBLIC unordered_dense::unordered_dense)
 
   # For CTest
-  enable_testing()
+  include(CTest)
+  if (BUILD_TESTING)
+      # test 
+      add_executable(test_calendar_data "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_calendar_data.cpp")
+      target_link_libraries(test_calendar_data quantcalendar quantdata::qdmongodb)
+      add_test(NAME "test_calendar_data" COMMAND "test_calendar_data" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
 
-  # test 
-  add_executable(test_calendar_data "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_calendar_data.cpp")
-  target_link_libraries(test_calendar_data quantcalendar quantdata::qdmongodb)
-  add_test(NAME "test_calendar_data" COMMAND "test_calendar_data" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  # For Install
+  # example from https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#config-file-packages
+  install(
+    TARGETS quantcalendar
+    EXPORT quantcalendar_Targets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include)
+
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake/quantcalendarConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+  )
+  export(EXPORT quantcalendar_Targets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/quantcalendarTargets.cmake"
+    NAMESPACE quantcalendar::
+  )
+  set(ConfigPackageLocation lib/cmake/quantcalendar)
+  install(EXPORT quantcalendar_Targets
+    FILE
+    quantcalendar_Targets.cmake
+    NAMESPACE
+    quantcalendar::
+    DESTINATION
+    ${ConfigPackageLocation}
+  )
+  install(
+    FILES
+    cmake/quantcalendarConfig.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake/quantcalendarConfigVersion.cmake"
+    DESTINATION
+    ${ConfigPackageLocation}
+  )
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/quantcalendar"
+    DESTINATION include)
 endif()

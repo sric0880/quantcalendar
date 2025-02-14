@@ -1,0 +1,5 @@
+include(CMakeFindDependencyMacro)
+find_dependency(fmt)
+find_dependency(unordered_dense)
+find_dependency(quantdata)
+include("${CMAKE_CURRENT_LIST_DIR}/quantcalendar_Targets.cmake")

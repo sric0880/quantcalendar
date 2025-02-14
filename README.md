@@ -61,12 +61,16 @@ sudo cmake --build ./build --target install
 
 #### Windows
 
-在Visual Studio中调试：修改`CMakePresets.json`中的configurePresets > windows-base > CMAKE_PREFIX_PATH。这个是前面安装mongo cxx driver的`CMAKE_INSTALL_PREFIX`，告诉CMake去哪个目录查找MongoDB的库文件。
+MongoDB只是在测试用例中使用，如果不测试，可以不填写`CMAKE_PREFIX_PATH`，可以通过传入 -DBUILD_TESTING=OFF禁止测试编译。
+如果需要运行测试，才需要填写`CMAKE_PREFIX_PATH`。两种方法修改`CMAKE_PREFIX_PATH`:
 
-命令行安装：DCMAKE_PREFIX_PATH 改成自己的目录。MongoDB只是在测试用例中使用，如果不测试，可以不填写`DCMAKE_PREFIX_PATH`，并注释掉CMakeLists.txt中相关测试用例。
+ - 在Visual Studio中调试：修改`CMakePresets.json`中的configurePresets > windows-base > CMAKE_PREFIX_PATH。这个是前面安装mongo cxx driver的`CMAKE_INSTALL_PREFIX`，告诉CMake去哪个目录查找MongoDB的库文件。
+ - 命令行输入-DCMAKE_PREFIX_PATH。
+
+命令行安装：
 
 ```sh
-cmake -S . -B ./build -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH=C:\"Program Files (x86)"\mongo-c-driver
+cmake -S . -B ./build -G "Visual Studio 17 2022" -DBUILD_TESTING=OFF
 cmake --build ./build --config RelWithDebInfo --parallel
 cmake --build ./build --target install --config RelWithDebInfo
 ```
@@ -109,6 +113,8 @@ python .\setup.py build_ext --inplace -G "Visual Studio 17 2022" -- -DCMAKE_BUIL
 
 ### C++
 
+先编译
+
 ```sh
 # 添加 -V 打印所有输出
 ctest -T test --test-dir out/build/linux-debug --output-on-failure
@@ -120,4 +126,14 @@ ctest -T test --test-dir out/build/linux-debug --output-on-failure
 
 ```sh
 python -m pytest tests
+```
+
+
+## 在其他项目作为依赖库使用
+
+在其他项目的CMakeLists.txt中添加
+
+```
+find_package(quantcalendar REQUIRED)
+target_link_libraries(YOUR_LIB quantcalenar::quantcalendar)
 ```
