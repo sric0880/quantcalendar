@@ -14,6 +14,12 @@ from ._quantcalendar import (
     timestamp_us,
     to_daily,
 )
+from .utils_datetime import (
+    pydt_from_second,
+    pydt_from_millisecond,
+    pydt_from_microsecond,
+    pydt_from_sec_list,
+)
 
 
 class bar_unit:
@@ -41,4 +47,8 @@ __all__ = [
     "timestamp_ms",
     "timestamp_us",
     "combine",
+    "pydt_from_second",
+    "pydt_from_millisecond",
+    "pydt_from_microsecond",
+    "pydt_from_sec_list",
 ]

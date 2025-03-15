@@ -304,17 +304,17 @@ def timedelta_s(dt1: Union[datetime, datetime64], dt2: Union[datetime, datetime6
     Return: seconds of (dt1 - dt2)
     """
 
-def timedelta_ms(dt1, dt2: Union[datetime, datetime64]) -> int:
+def timedelta_ms(dt1: Union[datetime, datetime64], dt2: Union[datetime, datetime64]) -> int:
     """
     Return: milliseconds of (dt1 - dt2)
     """
 
-def timedelta_us(dt1, dt2: Union[datetime, datetime64]) -> int:
+def timedelta_us(dt1: Union[datetime, datetime64], dt2: Union[datetime, datetime64]) -> int:
     """
     Return: microseconds of (dt1 - dt2)
     """
 
-def timedelta_ns(dt1, dt2: Union[datetime, datetime64]) -> int:
+def timedelta_ns(dt1: Union[datetime, datetime64], dt2: Union[datetime, datetime64]) -> int:
     """
     Return: nanoseconds of (dt1 - dt2)
     """

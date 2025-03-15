@@ -2,7 +2,7 @@ from skbuild import setup
 
 setup(
     name="quantcalendar",
-    version="2.0",
+    version="2.1",
     author="lzq",
     description="trade calendar",
     license="MIT",
