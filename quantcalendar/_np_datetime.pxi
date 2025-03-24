@@ -9,7 +9,10 @@ from numpy cimport (
     get_timedelta64_value,
     get_datetime64_unit,
     PyTimedeltaScalarObject,
+    import_array,
 )
+
+import_array()
 
 from ._quantcalendar cimport (
     tp,
