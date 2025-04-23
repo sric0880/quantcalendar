@@ -2,7 +2,6 @@
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 from libcpp.string cimport string
-from numpy cimport npy_datetime, NPY_DATETIMEUNIT
 
 cdef extern from "<chrono>" namespace "std::chrono" nogil:
 	cdef cppclass seconds:
@@ -186,7 +185,3 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	cdef cppclass Time7x24Calendar(Calendar[Date7x24Array]):
 		@staticmethod
 		Time7x24Calendar &GetInstance(const string &symbol) except +
-
-
-cdef npy_datetime as_int64(object dt, NPY_DATETIMEUNIT creso)
-cdef npy_datetime as_int64_d(object dt, NPY_DATETIMEUNIT creso_first, NPY_DATETIMEUNIT creso_second)

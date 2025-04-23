@@ -64,8 +64,8 @@ sudo cmake --build ./build --target install
 MongoDB只是在测试用例中使用，如果不测试，可以不填写`CMAKE_PREFIX_PATH`，可以通过传入 -DBUILD_TESTING=OFF禁止测试编译。
 如果需要运行测试，才需要填写`CMAKE_PREFIX_PATH`。两种方法修改`CMAKE_PREFIX_PATH`:
 
- - 在Visual Studio中调试：修改`CMakePresets.json`中的configurePresets > windows-base > CMAKE_PREFIX_PATH。这个是前面安装mongo cxx driver的`CMAKE_INSTALL_PREFIX`，告诉CMake去哪个目录查找MongoDB的库文件。
- - 命令行输入-DCMAKE_PREFIX_PATH。
+- 在Visual Studio中调试：修改`CMakePresets.json`中的configurePresets > windows-base > CMAKE_PREFIX_PATH。这个是前面安装mongo cxx driver的`CMAKE_INSTALL_PREFIX`，告诉CMake去哪个目录查找MongoDB的库文件。
+- 命令行输入-DCMAKE_PREFIX_PATH。
 
 命令行安装：
 
@@ -128,12 +128,11 @@ ctest -T test --test-dir out/build/linux-debug --output-on-failure
 python -m pytest tests
 ```
 
-
 ## 在其他项目作为依赖库使用
 
 在其他项目的CMakeLists.txt中添加
 
-```
+```cmake
 find_package(quantcalendar REQUIRED)
 target_link_libraries(YOUR_LIB quantcalenar::quantcalendar)
 ```
