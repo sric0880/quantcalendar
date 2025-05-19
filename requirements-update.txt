@@ -2,4 +2,4 @@ pandas
 # exchange_calendars==4.5.6, # 暂时没用
 tushare
 tqsdk
-chinesecalendar==1.9.2 # 每年要更新
+chinesecalendar==1.10.0 # 每年要更新

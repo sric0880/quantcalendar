@@ -13,7 +13,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(fmt CONFIG REQUIRED)
 find_package(unordered_dense REQUIRED)
-find_package(quantdata REQUIRED)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -40,9 +39,8 @@ if(DEFINED SKBUILD)
 
   add_cython_target(_quantcalendar "quantcalendar/_quantcalendar.pyx" CXX)
   add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
-  add_library(_quantcalendar MODULE "src/calendar.cpp" "src/dates.cpp" ${_quantcalendar})
+  add_library(_quantcalendar MODULE "src/calendar.cpp" "src/dates.cpp" "src/datetime.cpp" ${_quantcalendar})
   target_link_libraries(_quantcalendar
-    quantdata::qddatetime
     fmt::fmt
     unordered_dense::unordered_dense)
   python_extension_module(_quantcalendar)
@@ -54,9 +52,8 @@ if(DEFINED SKBUILD)
     "quantcalendar/_quantcalendar.pyi"
     DESTINATION quantcalendar)
 else()
-  add_library(quantcalendar STATIC "src/calendar.cpp" "src/dates.cpp")
+  add_library(quantcalendar STATIC "src/calendar.cpp" "src/dates.cpp" "src/datetime.cpp")
   target_link_libraries(quantcalendar
-    PUBLIC quantdata::qddatetime
     PUBLIC fmt::fmt
     PUBLIC unordered_dense::unordered_dense)
 
@@ -64,8 +61,9 @@ else()
   include(CTest)
   if (BUILD_TESTING)
       # test 
+      include_directories("${CMAKE_CURRENT_SOURCE_DIR}/tests")
       add_executable(test_calendar_data "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_calendar_data.cpp")
-      target_link_libraries(test_calendar_data quantcalendar quantdata::qdmongodb)
+      target_link_libraries(test_calendar_data quantcalendar)
       add_test(NAME "test_calendar_data" COMMAND "test_calendar_data" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
   endif()
 

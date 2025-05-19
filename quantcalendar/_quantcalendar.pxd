@@ -19,7 +19,7 @@ cdef extern from "<chrono>" namespace "std::chrono" nogil:
 
 ctypedef time_point[system_clock] tp
 
-cdef extern from "quantdata/datetime.h" nogil:
+cdef extern from "quantcalendar/datetime.h" nogil:
 	cdef cppclass Date:
 		int year
 		int mon

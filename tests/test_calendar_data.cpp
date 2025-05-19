@@ -6,19 +6,12 @@
 
 #include "quantcalendar/dates.h"
 #include "quantcalendar/calendar.h"
-#include "quantdata/mongodb.h"
-
-const char *host = "localhost";
+#include "calendar_data.h"
 
 int main(int argv, char *args[])
 {
   qmc::DatesArray dates_arr;
-  MongoConnect(host);
-  std::atexit(MongoClose);
-  auto cursor = MongoGetTradeCal("quantcalendar", "cn_stock");
-  auto results = MongoFetchArrays<qmc::sec_t, char>(std::move(cursor), [](const document::view &view)
-                                                    { return std::tuple{duration_cast<seconds>(view["_id"].get_date().value).count(), static_cast<char>(view["status"].get_int32().value)}; });
-  dates_arr.Init(results);
+  dates_arr.Init(cn_stock);
   auto iter = dates_arr.Upper(Datetime(2023, 6, 30).to_timestamp());
   auto iter2 = dates_arr.Lower(Datetime(2023, 6, 30).to_timestamp());
   assert((*iter).second.IsTrading());
@@ -28,7 +21,8 @@ int main(int argv, char *args[])
   auto iter3 = dates_arr.Upper(Datetime(2023, 6, 30, 12).to_timestamp());
   assert(iter3.is_end());
 
-  auto iter4 = dates_arr.Upper(Datetime(2024, 12, 31).to_timestamp());
+  // Test the end of calendar(maybe changed when the calenar is updated)
+  auto iter4 = dates_arr.Upper(Datetime(2025, 12, 31).to_timestamp());
   ++iter4;
   assert(iter4.is_end());
 
@@ -36,25 +30,12 @@ int main(int argv, char *args[])
   --iter5;
   assert(iter5.is_end());
 
-  qmc::CalendarAstock::Init(results);
+  qmc::CalendarAstock::Init(cn_stock);
   const qmc::CalendarAstock &astock_cal = qmc::CalendarAstock::GetInstance();
   std::cout << astock_cal.ToString() << std::endl;
 
-  auto cursor1 = MongoGetData("quantcalendar", "cn_future_sessions");
-  auto sessions = MongoFetchArrays<std::string, std::vector<qmc::session_t>>(std::move(cursor1),
-                                                                             [](const document::view &view)
-                                                                             {
-                                                                               std::vector<qmc::session_t> market_time;
-                                                                               for (auto &pair : view["market_time"].get_array().value)
-                                                                               {
-                                                                                 market_time.emplace_back(pair[0].get_int32().value, pair[1].get_int32().value);
-                                                                               }
-                                                                               return std::tuple{view["_id"].get_string().value, market_time};
-                                                                             });
-  auto cursor2 = MongoGetData("quantcalendar", "cn_future");
-  auto results2 = MongoFetchArrays<qmc::sec_t, char>(std::move(cursor2), [](const document::view &view)
-                                                     { return std::tuple{duration_cast<seconds>(view["_id"].get_date().value).count(), static_cast<char>(view["status"].get_int32().value)}; });
-  qmc::CalendarCTP::Init(results2, std::move(sessions));
+  auto cpy_cn_future_sessions = cn_future_sessions;
+  qmc::CalendarCTP::Init(cn_future, std::move(cpy_cn_future_sessions));
   auto const &ctp_cal = qmc::CalendarCTP::GetInstance("ag2405");
   std::cout << ctp_cal.ToString() << std::endl;
 

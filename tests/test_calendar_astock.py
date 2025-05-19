@@ -2,18 +2,16 @@ import pickle
 
 import numpy as np
 import pytest
-import quantdata as qd
 from datetime_helper import to_seconds
 
 from quantcalendar import CalendarAstock, bar_unit, timestamp_s
+from calendar_data import cn_stock
 
 
 @pytest.fixture(scope="module", autouse=True)
-def mongo_client():
-    with qd.open_mongodb(host="127.0.0.1"):
-        days = qd.mongo_get_data("quantcalendar", "cn_stock")
-        dates_arr = [(timestamp_s(day["_id"]), day["status"]) for day in days]
-        CalendarAstock.Init(dates_arr)
+def _client():
+    dates_arr = [(timestamp_s(day["_id"].to_datetime64()), day["status"]) for day in cn_stock]
+    CalendarAstock.Init(dates_arr)
 
 
 # fmt: off

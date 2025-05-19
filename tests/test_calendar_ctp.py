@@ -5,20 +5,16 @@ from datetime import date, datetime, time
 
 import pandas as pd
 import pytest
-import quantdata as qd
 from datetime_helper import to_seconds
 
 from quantcalendar import CalendarCTP, bar_unit, timestamp_s
-
+from calendar_data import cn_future, cn_future_sessions
 
 @pytest.fixture(scope="module", autouse=True)
-def mongo_client():
-    with qd.open_mongodb(host="127.0.0.1"):
-        days = qd.mongo_get_data("quantcalendar", "cn_future")
-        dates_arr = [(timestamp_s(day["_id"]), day["status"]) for day in days]
-        sessions = qd.mongo_get_data("quantcalendar", "cn_future_sessions")
-        sessions = [(s["_id"].encode("ascii"), s["market_time"]) for s in sessions]
-        CalendarCTP.Init(dates_arr, sessions)
+def _client():
+    dates_arr = [(timestamp_s(day["_id"].to_datetime64()), day["status"]) for day in cn_future]
+    sessions = [(s["_id"].encode("ascii"), s["market_time"]) for s in cn_future_sessions]
+    CalendarCTP.Init(dates_arr, sessions)
 
 
 def _ctp_close_time(product_id, year, month, day):
