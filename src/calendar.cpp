@@ -1,4 +1,4 @@
-﻿#include <string>
+#include <string>
 #include <algorithm>
 #include "fmt/format.h"
 #include "fmt/ranges.h"

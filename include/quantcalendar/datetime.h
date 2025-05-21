@@ -33,9 +33,9 @@ constexpr system_clock::time_point fromtimestamp(Interger sec)
 }
 
 /**
- * double???????????????Linux?time_point??????????
- * ???double??????????????????15??????????
- * ?????????
+ * double表示时间，会有精度误差，尤其是Linux下time_point是纳秒级，会差几纳秒
+ * 其次，double本身表示最高有效位（包括整数部分）是15位，也是有精度误差。
+ * 一定要慎用该函数。
  */
 template <>
 constexpr system_clock::time_point fromtimestamp<double>(double ts)
@@ -56,7 +56,7 @@ constexpr system_clock::time_point fromtimestamp_micro(Interger micro)
 }
 
 /**
- * system_clock ??????????????????
+ * system_clock 部分系统精度为微妙，纳秒会有精度丢失
  */
 template <typename Interger>
 constexpr system_clock::time_point fromtimestamp_nano(Interger nano)
@@ -66,7 +66,7 @@ constexpr system_clock::time_point fromtimestamp_nano(Interger nano)
 }
 
 /**
- * system_clock ??????????????????
+ * system_clock 部分系统精度为微妙，纳秒会有精度丢失
  */
 system_clock::time_point fromisoformat(const char *time_string);
 
@@ -293,11 +293,11 @@ struct Datetime
   Date date;
   Time<Precision> time;
 
-  // ????UTC????????????????timestamp
+  // 一定要是UTC时间，不同时区，直接影响到底层的timestamp
   constexpr Datetime(Date d, Time<Precision> t) : date(d), time(t) {}
-  // ????UTC????????????????timestamp???????
+  // 一定要是UTC时间，不同时区，直接影响到底层的timestamp，默认本地时间
   constexpr Datetime(int year, int mon, int day, int hour = 0, int min = 0, int sec = 0) : Datetime({year, mon, day}, {hour, min, sec, 0}) {};
-  // ????UTC????????????????timestamp???????
+  // 一定要是UTC时间，不同时区，直接影响到底层的timestamp，默认本地时间
   constexpr Datetime(int year, int mon, int day, int hour, int min, int sec, int subseconds) : Datetime({year, mon, day}, {hour, min, sec, subseconds})
   {
     static_assert(!std::is_same_v<Precision, seconds>);
@@ -339,7 +339,7 @@ struct Datetime
     return to_duration();
   }
 
-  /** ???? ?????????? ??????????? */
+  /** 对于纳秒 部分系统会有精度丢失 所以这里不能做隐式转换 */
   explicit operator system_clock::time_point() const
   {
     return ::fromtimestamp(to_duration());
@@ -363,7 +363,7 @@ constexpr const seconds::rep seconds_till_epoch = (seconds::rep)Date{1970, 1, 1}
 template <class Precision>
 Precision Datetime<Precision>::to_duration() const
 {
-  // ?????
+  // 效率比较低
   // std::tm _tm{};
   // _tm.tm_year = date.year - 1900;
   // _tm.tm_mon = date.mon - 1;
@@ -378,7 +378,7 @@ Precision Datetime<Precision>::to_duration() const
 
 namespace datetime
 {
-  // ??????
+  // 按精度来转换
   template <class Precision = seconds, class _Duration_or_Integer>
   inline Datetime<Precision> fromtimestamp(_Duration_or_Integer t)
   {
