@@ -12,21 +12,21 @@ int main(int argv, char *args[])
 {
   qmc::DatesArray dates_arr;
   dates_arr.Init(cn_stock);
-  auto iter = dates_arr.Upper(Datetime(2023, 6, 30).to_timestamp());
-  auto iter2 = dates_arr.Lower(Datetime(2023, 6, 30).to_timestamp());
+  auto iter = dates_arr.Upper(qmc::Datetime(2023, 6, 30).to_timestamp());
+  auto iter2 = dates_arr.Lower(qmc::Datetime(2023, 6, 30).to_timestamp());
   assert((*iter).second.IsTrading());
-  assert((*iter).second.dt_ == Datetime(2023, 6, 30));
+  assert((*iter).second.dt_ == qmc::Datetime(2023, 6, 30));
   assert((*iter).second.dt_ == (*iter2).second.dt_);
 
-  auto iter3 = dates_arr.Upper(Datetime(2023, 6, 30, 12).to_timestamp());
+  auto iter3 = dates_arr.Upper(qmc::Datetime(2023, 6, 30, 12).to_timestamp());
   assert(iter3.is_end());
 
   // Test the end of calendar(maybe changed when the calenar is updated)
-  auto iter4 = dates_arr.Upper(Datetime(2025, 12, 31).to_timestamp());
+  auto iter4 = dates_arr.Upper(qmc::Datetime(2025, 12, 31).to_timestamp());
   ++iter4;
   assert(iter4.is_end());
 
-  auto iter5 = dates_arr.Lower(Datetime(1990, 12, 19).to_timestamp());
+  auto iter5 = dates_arr.Lower(qmc::Datetime(1990, 12, 19).to_timestamp());
   --iter5;
   assert(iter5.is_end());
 

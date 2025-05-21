@@ -1,6 +1,8 @@
 #include "quantcalendar/datetime.h" // defined timezone
 #include <assert.h>
 
+NS_QMC_BEGIN
+
 /**
  * system_clock 部分系统精度为微妙，纳秒会有精度丢失
  * 不支持时区，默认为UTC时区
@@ -99,3 +101,5 @@ IsoCalendarDate Date::isocalendar() const
   }
   return {_year, week + 1, weekday + 1};
 }
+
+NS_QMC_END

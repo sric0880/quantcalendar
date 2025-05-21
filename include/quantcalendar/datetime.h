@@ -7,8 +7,12 @@
 #include <iomanip>
 #include <stdexcept>
 
+#include "quantcalendar/qmc_globals.h"
+
 using namespace std::chrono;
 using nanoseconds100 = duration<nanoseconds::rep, std::ratio<1, 10'000'000>>;
+
+NS_QMC_BEGIN
 
 class DatetimeInputError : public std::invalid_argument
 {
@@ -325,7 +329,7 @@ struct Datetime
 
   std::string isoformat() const
   {
-    return ::isoformat(to_duration());
+    return qmc::isoformat(to_duration());
   }
 
   // return time since epoch
@@ -342,7 +346,14 @@ struct Datetime
   /** 对于纳秒 部分系统会有精度丢失 所以这里不能做隐式转换 */
   explicit operator system_clock::time_point() const
   {
-    return ::fromtimestamp(to_duration());
+    return qmc::fromtimestamp(to_duration());
+  }
+
+  // 按精度来转换
+  template <class Precision1 = seconds, class _Duration_or_Integer>
+  inline static Datetime<Precision1> fromtimestamp(_Duration_or_Integer t)
+  {
+    return Datetime<Precision1>(t);
   }
 };
 
@@ -376,19 +387,11 @@ Precision Datetime<Precision>::to_duration() const
   return time.to_duration() + seconds((seconds::rep)date.toordinal() * 86400 - seconds_till_epoch);
 }
 
-namespace datetime
-{
-  // 按精度来转换
-  template <class Precision = seconds, class _Duration_or_Integer>
-  inline Datetime<Precision> fromtimestamp(_Duration_or_Integer t)
-  {
-    return Datetime<Precision>(t);
-  }
-}
-
 template <>
 inline Datetime<nanoseconds>::operator system_clock::time_point() const
 {
   printf("Datetime<nanoseconds> to system_clock::time_point may lose precision\n");
-  return ::fromtimestamp(duration_cast<system_clock::duration>(to_duration()));
+  return qmc::fromtimestamp(duration_cast<system_clock::duration>(to_duration()));
 }
+
+NS_QMC_END
