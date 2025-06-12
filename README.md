@@ -54,7 +54,7 @@ print(timestamp_us(d3))
 #### MacOS/Linux
 
 ```sh
-cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/local
+cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release
 cmake --build ./build
 sudo cmake --build ./build --target install
 ```

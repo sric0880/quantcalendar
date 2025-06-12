@@ -11,7 +11,8 @@ project(quantcalendar VERSION 1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(fmt CONFIG REQUIRED)
+# use hints for not using lib under anaconda
+find_package(fmt CONFIG REQUIRED HINTS /usr/local)
 find_package(unordered_dense REQUIRED)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
