@@ -127,7 +127,7 @@ class PyCalendar:
         get `count` trade week days of `weekday` which >= `dt`
 
         Params:
-         - weekday: monday to sunday [1, 7]
+         - weekday : monday to sunday [1, 7]
         """
 
     def get_week_days_lte(self, weekday: int, dt: Union[datetime, datetime64, int], count: int = 2**32-1) -> list[int]:
@@ -135,7 +135,7 @@ class PyCalendar:
         get `count` trade week days of `weekday` which <= `dt`
 
         Params:
-         - weekday: monday to sunday [1, 7]
+         - weekday : monday to sunday [1, 7]
         """
 
     def get_week_days_between(self, weekday: int, start: Union[datetime, datetime64, int], end: Union[datetime, datetime64, int] = None) -> list[int]:
@@ -143,54 +143,54 @@ class PyCalendar:
         get week days of `weekday` which are between [`start`, `end`]
 
         Params:
-         - weekday: monday to sunday [1, 7]
+         - weekday : monday to sunday [1, 7]
         """
 
     def get_week_day_next(self, weekday: int, dt: Union[datetime, datetime64, int])  -> int:
         """get next week day of `weekday`, include `dt`
 
         Params:
-         - weekday: monday to sunday [1, 7]
+         - weekday : monday to sunday [1, 7]
         """
 
     def get_week_day_last(self, weekday: int, dt: Union[datetime, datetime64, int])  -> int:
         """get last week day of `weekday`, include `dt`
 
         Params:
-         - weekday: monday to sunday [1, 7]
+         - weekday : monday to sunday [1, 7]
          """
 
     def get_bartime_next(self, interval: int, dt: Union[datetime, datetime64]) -> int:
         """ get current bartime, include `dt`
 
         Params:
-         * dt: native timestamp. Timezone will be ignored when dt is datetime type
-         * interval: interval seconds of bars
+         * dt : native timestamp. Timezone will be ignored when dt is datetime type
+         * interval : interval seconds of bars
         """
 
     def get_bartimes_gte(self, interval: int, start: Union[datetime, datetime64], count: int=2**32-1) -> list[int]:
         """ get `count` bartimes that are >= `start`
 
         Params:
-         * interval: interval seconds of bars
-         * start: native timestamp. Timezone will be ignored when dt is datetime type
-         * count: max count to get
+         * interval : interval seconds of bars
+         * start : native timestamp. Timezone will be ignored when dt is datetime type
+         * count : max count to get
         """
 
     def get_bartimes_between(self, interval: int, start: Union[datetime, datetime64], end: Union[datetime, datetime64]) -> list[int]:
         """ get bartimes that are all in [`start`, `end`)
 
         Params:
-         * interval: interval seconds of bars
-         * start: native timestamp. Timezone will be ignored when dt is datetime type
-         * end: native timestamp. Timezone will be ignored when dt is datetime type
+         * interval : interval seconds of bars
+         * start : native timestamp. Timezone will be ignored when dt is datetime type
+         * end : native timestamp. Timezone will be ignored when dt is datetime type
         """
 
     def get_next_open_close(self, dt: Union[datetime, datetime64]) -> tuple[int, int]:
         """ 给定时间`dt`, 获取下一次(开盘, 收盘)时间。休息时间不算是收盘，每天只有一次开盘收盘时间。
 
         Params:
-         * dt: native timestamp. Timezone will be ignored when dt is datetime type
+         * dt : native timestamp. Timezone will be ignored when dt is datetime type
 
         Return:
          - pair(开盘, 收盘)时间
@@ -200,7 +200,7 @@ class PyCalendar:
         """ 给定时间`dt`, 获取下一次(开盘, 收盘)。休息时间段也算是收盘
 
         Params:
-         * dt: native timestamp. Timezone will be ignored when dt is datetime type
+         * dt : native timestamp. Timezone will be ignored when dt is datetime type
 
         Return:
          - pair(开盘, 收盘)时间
@@ -225,7 +225,7 @@ class PyCalendar:
         """ 判断时间`dt`是否正在交易中
 
         Params:
-         * dt: native timestamp. Timezone will be ignored when dt is datetime type
+         * dt : native timestamp. Timezone will be ignored when dt is datetime type
         """
 
     def is_trading_day(self, dt: Union[datetime, datetime64]) -> bool:
@@ -235,14 +235,14 @@ class PyCalendar:
         比如中国期货白银，周六凌晨1点正在交易，此时`is_trading_day`也为true，但是周六实际不是交易日。
 
         Params:
-         * dt: native timestamp. Timezone will be ignored when dt is datetime type
+         * dt : native timestamp. Timezone will be ignored when dt is datetime type
         """
 
     def is_trading_time(self, dt: Union[datetime, datetime64]) -> bool:
         """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
 
         Params:
-         * dt: native timestamp. Timezone will be ignored when dt is datetime type
+         * dt : native timestamp. Timezone will be ignored when dt is datetime type
         """
 
     def is_trading_time(self, dt: Union[datetime, datetime64], rangeclosed: RangeClosed) -> bool:

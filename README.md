@@ -81,6 +81,7 @@ install build tools
 
 ```sh
 pip install scikit-build
+pip install Cython
 ```
 
 #### MacOS/Linux
