@@ -8,7 +8,7 @@ import pytest
 import quantdata as qd
 from datetime_helper import to_seconds
 
-from quantcalendar import CalendarCTP, bar_unit, timestamp_s
+from quantcalendar import CalendarCTP, bar_unit, RangeClosed, timestamp_s
 
 
 @pytest.fixture(scope="module", autouse=True)
