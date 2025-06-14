@@ -305,7 +305,6 @@ bool Calendar<Data>::IsTradingDay(time_point dt) const
   }
 }
 
-
 template <class Data>
 void Calendar<Data>::InitSpecialSessions(ankerl::unordered_dense::map<sec_t, std::shared_ptr<SpecialSessions>> &&sessions) noexcept
 {
@@ -403,7 +402,7 @@ bool Calendar<Date7x24Array>::IsTrading(time_point dt) const { return true; }
 template <>
 bool Calendar<Date7x24Array>::IsTradingDay(time_point dt) const { return true; }
 template <>
-template <class Duration, class GreaterOrEqual = DurationGreaterEqual<Duration>, class LessOrEqual = DurationLessEqual<Duration>>
+template <class Duration, class GreaterOrEqual, class LessOrEqual>
 bool Calendar<Date7x24Array>::IsTradingTime(Duration dt) const { return true; }
 template <>
 template <class Duration>
