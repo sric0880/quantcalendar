@@ -7,7 +7,7 @@ from cython.operator cimport preincrement, predecrement
 from cython.operator cimport dereference as deref
 from libcpp.pair cimport pair
 
-from ._quantcalendar cimport Calendar, seconds, Date7x24Array
+from ._quantcalendar cimport Calendar, seconds, Date7x24Array, RangeClosed
 
 cdef class PyCalendar_Date7x24Array:
     cdef const Calendar[Date7x24Array]* c_cal
@@ -304,8 +304,11 @@ cdef class PyCalendar_Date7x24Array:
     def is_trading_day(self, dt):
         return self.c_cal.IsTradingDay(to_timepoint(dt))
 
-    def is_trading_time(self, dt):
-        return self.c_cal.IsTradingTime(to_timepoint(dt))
+    def is_trading_time(self, tm, rangeclosed: RangeClosed = RangeClosed.BOTH):
+        if is_datetime64_object(tm) or PyDateTime_Check(tm):
+            return self.c_cal.IsTradingTime(to_timepoint(tm), rangeclosed)
+        else:
+            return self.c_cal.IsTradingTime(seconds(tm), rangeclosed)
 
     def __str__(self) -> str:
         return self.c_cal.ToString().decode('UTF-8')

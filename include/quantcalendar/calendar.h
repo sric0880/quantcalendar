@@ -44,6 +44,47 @@ inline sec_t to_daily(const datetime &dt)
   return duration_cast<seconds>(duration_cast<days>(dt.to_duration())).count();
 }
 
+enum class RangeClosed
+{
+  NONE,
+  LEFT,
+  RIGHT,
+  BOTH
+};
+
+template <class T1, class T2 = seconds>
+struct DurationGreater
+{
+  constexpr bool operator()(const T1 &lhs, const T2 &rhs) const
+  {
+    return lhs > rhs;
+  }
+};
+template <class T1, class T2 = seconds>
+struct DurationLess
+{
+  constexpr bool operator()(const T1 &lhs, const T2 &rhs) const
+  {
+    return lhs < rhs;
+  }
+};
+template <class T1, class T2 = seconds>
+struct DurationGreaterEqual
+{
+  constexpr bool operator()(const T1 &lhs, const T2 &rhs) const
+  {
+    return lhs >= rhs;
+  }
+};
+template <class T1, class T2 = seconds>
+struct DurationLessEqual
+{
+  constexpr bool operator()(const T1 &lhs, const T2 &rhs) const
+  {
+    return lhs <= rhs;
+  }
+};
+
 /**
  * 交易日历
  */
@@ -113,8 +154,62 @@ public:
   // 但是当IsTradingDay返回false，那么IsTrading必然返回false。
   // 比如中国期货白银，周六凌晨1点正在交易，此时IsTradingDay也为true，但是周六实际不是交易日。
   bool IsTradingDay(time_point dt) const;
+
   // 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
-  bool IsTradingTime(time_point dt) const;
+  template <class Duration, class GreaterOrEqual = DurationGreaterEqual<Duration>, class LessOrEqual = DurationLessEqual<Duration>>
+  bool IsTradingTime(Duration tm) const
+  {
+    if constexpr (std::is_same_v<Duration, time_point>)
+    {
+      return IsTradingTime(to_time(tm));
+    }
+    else
+    {
+      GreaterOrEqual left_cmp;
+      LessOrEqual right_cmp;
+      for (auto [start, end] : sorted_sessions_)
+      {
+        if (start < end)
+        {
+          if (left_cmp(tm, seconds(start)) && right_cmp(tm, seconds(end)))
+            return true;
+        }
+        else
+        {
+          if (left_cmp(tm, seconds(start)) || right_cmp(tm, seconds(end)))
+            return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  // 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
+  template <class Duration>
+  bool IsTradingTime(Duration tm, RangeClosed side) const
+  {
+    if constexpr (std::is_same_v<Duration, time_point>)
+    {
+      return IsTradingTime(to_time(tm), side);
+    }
+    else
+    {
+      switch (side)
+      {
+      case RangeClosed::NONE:
+        return IsTradingTime<Duration, DurationGreater<Duration>, DurationLess<Duration>>(tm);
+      case RangeClosed::LEFT:
+        return IsTradingTime<Duration, DurationGreaterEqual<Duration>, DurationLess<Duration>>(tm);
+      case RangeClosed::RIGHT:
+        return IsTradingTime<Duration, DurationGreater<Duration>, DurationLessEqual<Duration>>(tm);
+      case RangeClosed::BOTH:
+        return IsTradingTime<Duration, DurationGreaterEqual<Duration>, DurationLessEqual<Duration>>(tm);
+      default:
+        return false;
+      }
+    }
+  }
+
   std::string ToString() const;
 
 protected:

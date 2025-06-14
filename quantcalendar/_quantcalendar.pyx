@@ -2,7 +2,7 @@
 # distutils: language = c++
 # distutils: sources = src/calendar.cpp src/dates.cpp
 from libcpp.utility cimport move
-from ._quantcalendar cimport CalendarAstock, CalendarCTP, Time7x24Calendar
+from ._quantcalendar cimport CalendarAstock, CalendarCTP, Time7x24Calendar, RangeClosed
 
 include "_np_datetime.pxi"
 include "_quantcalendar_DatesArray.pxi"
@@ -62,7 +62,7 @@ cdef class PyTime7x24Calendar(PyCalendar_Date7x24Array):
     def is_trading_day(self, dt):
         return True
 
-    def is_trading_time(self, dt):
+    def is_trading_time(self, tm, rangeclosed: RangeClosed = RangeClosed.BOTH):
         return True
 
     def __str__(self) -> str:
