@@ -7,8 +7,9 @@ import pandas as pd
 import pytest
 from datetime_helper import to_seconds
 
-from quantcalendar import CalendarCTP, bar_unit, timestamp_s
+from quantcalendar import CalendarCTP, bar_unit, RangeClosed, timestamp_s
 from calendar_data import cn_future, cn_future_sessions
+
 
 @pytest.fixture(scope="module", autouse=True)
 def _client():
@@ -95,6 +96,35 @@ def test_trading_time(product_id, to_datetime64):
     assert cal.is_trading(to_datetime64(2023, 6, 21, 15, 0, 0))
     assert cal.is_trading(to_datetime64(2023, 6, 22, 9, 0, 0)) == False
     assert cal.is_trading(to_datetime64(2023, 6, 22, 9, 30, 0)) == False
+
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 9, 0, 0)) == (product_id != "IH")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 9, 30, 0))
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 10, 20, 0)) == (product_id != "AG")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 10, 15, 0))
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 10, 30, 0))
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 14, 55, 0))
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 0, 0))
+    # It's holiday but is in trading time
+    assert cal.is_trading_time(to_datetime64(2023, 6, 22, 9, 0, 0)) == (product_id != "IH")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 22, 9, 30, 0)) == True
+    assert cal.is_trading_time(to_datetime64(2023, 6, 22, 9, 30, 0), RangeClosed.NONE) == (product_id != "IH")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 22, 9, 30, 0), RangeClosed.RIGHT) == (product_id != "IH")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 0, 0), RangeClosed.BOTH)
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 0, 0), RangeClosed.RIGHT)
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 0, 0), RangeClosed.NONE) == (product_id == "")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 0, 0), RangeClosed.LEFT) == (product_id == "")
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 15, 0), RangeClosed.NONE) == False
+    assert cal.is_trading_time(to_datetime64(2023, 6, 21, 15, 15, 0), RangeClosed.LEFT) == False
+    assert cal.is_trading_time(15*3600, RangeClosed.BOTH)
+    assert cal.is_trading_time(15*3600, RangeClosed.RIGHT)
+    assert cal.is_trading_time(15*3600, RangeClosed.NONE) == (product_id == "")
+    assert cal.is_trading_time(15*3600, RangeClosed.LEFT) == (product_id == "")
+    assert cal.is_trading_time(15*3600 + 900, RangeClosed.NONE) == False
+    assert cal.is_trading_time(15*3600 + 900, RangeClosed.LEFT) == False
+    assert cal.is_trading_time(9*3600, RangeClosed.BOTH) == (product_id != "IH")
+    assert cal.is_trading_time(9*3600, RangeClosed.RIGHT) == False
+    assert cal.is_trading_time(9*3600, RangeClosed.NONE) == False
+    assert cal.is_trading_time(9*3600, RangeClosed.LEFT) == (product_id != "IH")
 
     _ctp_get_open_close_queries = [
         to_datetime64(2024, 9, 12, 20, 59, 59),

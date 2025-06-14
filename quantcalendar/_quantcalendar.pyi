@@ -1,7 +1,14 @@
 from datetime import datetime
+from enum import IntEnum
 from typing import Union
 
 from numpy import datetime64, timedelta64
+
+class RangeClosed(IntEnum):
+    NONE = 0
+    LEFT = (1,)
+    RIGHT = (2,)
+    BOTH = 3
 
 # fmt: off
 class PyCalendar:
@@ -236,6 +243,29 @@ class PyCalendar:
 
         Params:
          * dt: native timestamp. Timezone will be ignored when dt is datetime type
+        """
+
+    def is_trading_time(self, dt: Union[datetime, datetime64], rangeclosed: RangeClosed) -> bool:
+        """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
+
+        Params:
+         * dt: native timestamp. Timezone will be ignored when dt is datetime type
+         * rangeclosed: indicates range closed type
+        """
+
+    def is_trading_time(self, sec: int) -> bool:
+        """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
+
+        Params:
+         * sec: time of day in seconds
+        """
+
+    def is_trading_time(self, sec: int, rangeclosed: RangeClosed) -> bool:
+        """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
+
+        Params:
+         * sec: time of day in seconds
+         * rangeclosed: indicates range closed type
         """
 
 class PyCalendar_DatesArray(PyCalendar):

@@ -151,6 +151,11 @@ cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 
 cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	ctypedef pair[sec_t, sec_t] session_t
+	cpdef enum class RangeClosed:
+		NONE=0
+		LEFT=1,
+		RIGHT=2,
+		BOTH=3
 	cdef cppclass Calendar[T]:
 		const T * tradedays
 		vector[sec_t] GetBartimes(seconds interval, tp start, tp end) except +
@@ -165,7 +170,8 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		const string &GetTimezone()
 		bint IsTrading(tp dt) except +
 		bint IsTradingDay(tp dt) except +
-		bint IsTradingTime(tp dt)
+		bint IsTradingTime[U](U tm)
+		bint IsTradingTime[U](U tm, RangeClosed rc)
 		string ToString()
 
 	cdef cppclass CalendarAstock(Calendar[DatesArray]):

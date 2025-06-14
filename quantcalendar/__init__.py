@@ -2,6 +2,7 @@ from ._quantcalendar import PyCalendar as Calendar  # only used for annotation
 from ._quantcalendar import PyCalendarAstock as CalendarAstock
 from ._quantcalendar import PyCalendarCTP as CalendarCTP
 from ._quantcalendar import PyTime7x24Calendar as Time7x24Calendar
+from ._quantcalendar import RangeClosed
 from ._quantcalendar import (
     combine,
     timedelta_ms,

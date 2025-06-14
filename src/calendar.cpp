@@ -305,25 +305,6 @@ bool Calendar<Data>::IsTradingDay(time_point dt) const
   }
 }
 
-template <class Data>
-bool Calendar<Data>::IsTradingTime(time_point dt) const
-{
-  auto tm = to_time(dt);
-  for (auto [start, end] : sorted_sessions_)
-  {
-    if (start < end)
-    {
-      if (tm >= seconds(start) && tm <= seconds(end))
-        return true;
-    }
-    else
-    {
-      if (tm >= seconds(start) || tm <= seconds(end))
-        return true;
-    }
-  }
-  return false;
-}
 
 template <class Data>
 void Calendar<Data>::InitSpecialSessions(ankerl::unordered_dense::map<sec_t, std::shared_ptr<SpecialSessions>> &&sessions) noexcept
@@ -422,7 +403,11 @@ bool Calendar<Date7x24Array>::IsTrading(time_point dt) const { return true; }
 template <>
 bool Calendar<Date7x24Array>::IsTradingDay(time_point dt) const { return true; }
 template <>
-bool Calendar<Date7x24Array>::IsTradingTime(time_point dt) const { return true; }
+template <class Duration, class GreaterOrEqual = DurationGreaterEqual<Duration>, class LessOrEqual = DurationLessEqual<Duration>>
+bool Calendar<Date7x24Array>::IsTradingTime(Duration dt) const { return true; }
+template <>
+template <class Duration>
+bool Calendar<Date7x24Array>::IsTradingTime(Duration tm, RangeClosed side) const { return true; }
 template class Calendar<Date7x24Array>;
 
 #pragma endregion
