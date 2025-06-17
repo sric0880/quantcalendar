@@ -32,16 +32,12 @@ int main(int argv, char *args[])
 
   qmc::CalendarAstock::Init(cn_stock);
   const qmc::CalendarAstock &astock_cal = qmc::CalendarAstock::GetInstance();
-  std::cout << astock_cal.ToString() << std::endl;
 
   auto cpy_cn_future_sessions = cn_future_sessions;
   qmc::CalendarCTP::Init(cn_future, std::move(cpy_cn_future_sessions));
   auto const &ctp_cal = qmc::CalendarCTP::GetInstance("ag2405");
-  std::cout << ctp_cal.ToString() << std::endl;
 
   auto const &ctp_cal1 = qmc::CalendarCTP::GetInstance("IH");
-  std::cout << ctp_cal1.ToString() << std::endl;
 
   auto const &cal7x24 = qmc::Time7x24Calendar::GetInstance();
-  std::cout << cal7x24.ToString() << std::endl;
 }

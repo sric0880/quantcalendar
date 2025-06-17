@@ -121,6 +121,11 @@ public:
   {
     return GetBartimesImpl(interval, start, count, time_point::min());
   }
+
+  const auto &GetBartimes() const
+  {
+    return bartimes_;
+  }
   /**
    * 获取K线时间
    * @param dt: 当前时间
@@ -209,8 +214,6 @@ public:
       }
     }
   }
-
-  std::string ToString() const;
 
 protected:
   /// @brief

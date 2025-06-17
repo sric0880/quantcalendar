@@ -172,7 +172,6 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		bint IsTradingDay(tp dt) except +
 		bint IsTradingTime[U](U tm)
 		bint IsTradingTime[U](U tm, RangeClosed rc)
-		string ToString()
 
 	cdef cppclass CalendarAstock(Calendar[DatesArray]):
 		@staticmethod

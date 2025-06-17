@@ -310,5 +310,6 @@ cdef class PyCalendar_DatesArray:
         else:
             return self.c_cal.IsTradingTime(seconds(tm), rangeclosed)
 
-    def __str__(self) -> str:
-        return self.c_cal.ToString().decode('UTF-8')
+    # TODO
+    #def __str__(self) -> str:
+    #    return self.c_cal.ToString().decode('UTF-8')
