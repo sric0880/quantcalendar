@@ -31,7 +31,7 @@ public:
 class CalendarNotFound : public std::out_of_range
 {
 public:
-  CalendarNotFound(std::string_view calendar_name, std::string_view symbol);
+  CalendarNotFound(std::string calendar_name, std::string symbol);
 };
 
 NS_QMC_END

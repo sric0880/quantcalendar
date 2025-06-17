@@ -12,7 +12,6 @@ project(quantcalendar VERSION 1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # use hints for not using lib under anaconda
-find_package(fmt CONFIG REQUIRED HINTS /usr/local)
 find_package(unordered_dense REQUIRED)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -42,7 +41,6 @@ if(DEFINED SKBUILD)
   add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
   add_library(_quantcalendar MODULE "src/calendar.cpp" "src/dates.cpp" "src/datetime.cpp" "src/exceptions.cpp" ${_quantcalendar})
   target_link_libraries(_quantcalendar
-    fmt::fmt
     unordered_dense::unordered_dense)
   python_extension_module(_quantcalendar)
 
@@ -55,7 +53,6 @@ if(DEFINED SKBUILD)
 else()
   add_library(quantcalendar STATIC "src/calendar.cpp" "src/dates.cpp" "src/datetime.cpp" "src/exceptions.cpp")
   target_link_libraries(quantcalendar
-    PRIVATE fmt::fmt
     PUBLIC unordered_dense::unordered_dense)
 
   # For CTest

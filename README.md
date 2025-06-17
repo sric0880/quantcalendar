@@ -46,7 +46,6 @@ print(timestamp_us(d3))
 
 ### 依赖项
 
-1. 下载并安装 [quantdata](https://github.com/sric0880/quantdata)，依赖其中的`qddatetime`库，和`qdmongdb`用于测试
 2. 下载并安装 [unordered_dense](https://github.com/martinus/unordered_dense)
 
 ### C++
