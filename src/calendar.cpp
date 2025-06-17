@@ -1,8 +1,5 @@
 ﻿#include <string>
 #include <algorithm>
-#include "fmt/format.h"
-#include "fmt/ranges.h"
-#include "fmt/chrono.h"
 
 #include "quantcalendar/calendar.h"
 
@@ -352,48 +349,6 @@ sec_t Calendar<Data>::CombineDatetimeSos(sec_t tradingday, sec_t time) const
     return tradingday + time - offset_;
   else
     return CombineDatetime(tradingday, time);
-}
-
-inline std::string time_fmt(sec_t sec)
-{
-  return fmt::format("{:%H:%M:%S}", seconds(sec));
-}
-
-template <class Data>
-std::string Calendar<Data>::ToString() const
-{
-  std::vector<std::string> sessions;
-  int i = 1;
-  for (auto &[_sos, _eos] : sessions_)
-  {
-    if (_eos <= _sos)
-      sessions.emplace_back(fmt::format("\t{}) {}-{}(+1 days)", i, time_fmt(_sos), time_fmt(_eos)));
-    else
-      sessions.emplace_back(fmt::format("\t{}) {}-{}", i, time_fmt(_sos), time_fmt(_eos)));
-    ++i;
-  }
-
-  std::vector<std::string> bartimestamps;
-  for (auto &[inte, bts] : bartimes_)
-  {
-    int k = inte;
-    k /= 60;
-    char unit = 'm';
-    if (k >= 60)
-    {
-      k /= 60;
-      unit = 'H';
-    }
-    size_t bts_size = bts.size();
-    std::vector<std::string> bt_strs(bts_size);
-    std::transform(bts.begin(), bts.end(), bt_strs.begin(), [](const int &sec)
-                   { return time_fmt(sec); });
-    if (bts_size > 8)
-      bartimestamps.emplace_back(fmt::format("\t{}{})\t[{}]", k, unit, fmt::format("{}, {}, {}, {},...{}, {}, {}, {}", bt_strs[0], bt_strs[1], bt_strs[2], bt_strs[3], bt_strs[bts_size - 4], bt_strs[bts_size - 3], bt_strs[bts_size - 2], bt_strs[bts_size - 1])));
-    else
-      bartimestamps.emplace_back(fmt::format("\t{}{})\t[{}]", k, unit, fmt::join(bt_strs, ", ")));
-  }
-  return fmt::format("时区: {}\n交易时间段:\n {}\nK线时间点划分:\n {}\n", tz_, fmt::join(sessions, "\n"), fmt::join(bartimestamps, "\n"));
 }
 
 template class Calendar<DatesArray>;

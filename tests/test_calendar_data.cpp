@@ -38,7 +38,6 @@ int main(int argv, char *args[])
 
   qmc::CalendarAstock::Init(results);
   const qmc::CalendarAstock &astock_cal = qmc::CalendarAstock::GetInstance();
-  std::cout << astock_cal.ToString() << std::endl;
 
   auto cursor1 = MongoGetData("quantcalendar", "cn_future_sessions");
   auto sessions = MongoFetchArrays<std::string, std::vector<qmc::session_t>>(std::move(cursor1),
@@ -56,11 +55,8 @@ int main(int argv, char *args[])
                                                      { return std::tuple{duration_cast<seconds>(view["_id"].get_date().value).count(), static_cast<char>(view["status"].get_int32().value)}; });
   qmc::CalendarCTP::Init(results2, std::move(sessions));
   auto const &ctp_cal = qmc::CalendarCTP::GetInstance("ag2405");
-  std::cout << ctp_cal.ToString() << std::endl;
 
   auto const &ctp_cal1 = qmc::CalendarCTP::GetInstance("IH");
-  std::cout << ctp_cal1.ToString() << std::endl;
 
   auto const &cal7x24 = qmc::Time7x24Calendar::GetInstance();
-  std::cout << cal7x24.ToString() << std::endl;
 }

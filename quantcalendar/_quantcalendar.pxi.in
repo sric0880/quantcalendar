@@ -310,5 +310,6 @@ cdef class PyCalendar_${CALENDAR_DATA_CLASS}:
         else:
             return self.c_cal.IsTradingTime(seconds(tm), rangeclosed)
 
-    def __str__(self) -> str:
-        return self.c_cal.ToString().decode('UTF-8')
+    # TODO
+    #def __str__(self) -> str:
+    #    return self.c_cal.ToString().decode('UTF-8')
