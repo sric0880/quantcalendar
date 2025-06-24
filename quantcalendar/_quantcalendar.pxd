@@ -160,6 +160,8 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		const T * tradedays
 		vector[sec_t] GetBartimes(seconds interval, tp start, tp end) except +
 		vector[sec_t] GetBartimes(seconds interval, tp start, size_t count) except +
+		vector[int] GetBartimes(seconds interval) except +
+		vector[int] GetBartimes(int interval) except +
 		sec_t GetCurrentBartime(seconds interval, tp dt) except +
 		session_t GetNextOpenClose(tp dt) except +
 		session_t GetNextSession(tp dt) except +

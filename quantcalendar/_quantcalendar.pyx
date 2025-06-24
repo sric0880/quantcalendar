@@ -4,6 +4,12 @@
 from libcpp.utility cimport move
 from ._quantcalendar cimport CalendarAstock, CalendarCTP, Time7x24Calendar, RangeClosed
 
+cdef str time_fmt(time: sec_t):
+    cdef int hour = time // 3600
+    cdef int min = (time % 3600) // 60
+    cdef int sec = time - 3600 * hour - 60 * min
+    return "{:02d}:{:02d}:{:02d}".format(hour, min, sec)
+
 include "_np_datetime.pxi"
 include "_quantcalendar_DatesArray.pxi"
 include "_quantcalendar_Date7x24Array.pxi"

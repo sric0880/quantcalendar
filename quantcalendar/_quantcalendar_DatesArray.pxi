@@ -277,6 +277,9 @@ cdef class PyCalendar_DatesArray:
     def get_bartimes_between(self, int interval, start, end):
         return self.c_cal.GetBartimes(seconds(interval), to_timepoint(start), to_timepoint(end))
 
+    def get_bartimes(self, int interval):
+        return self.c_cal.GetBartimes(interval);
+
     def get_next_open_close(self, dt):
         return self.c_cal.GetNextOpenClose(to_timepoint(dt))
 
@@ -310,6 +313,44 @@ cdef class PyCalendar_DatesArray:
         else:
             return self.c_cal.IsTradingTime(seconds(tm), rangeclosed)
 
-    # TODO
-    #def __str__(self) -> str:
-    #    return self.c_cal.ToString().decode('UTF-8')
+    def __str__(self) -> str:
+        cdef const vector[session_t]* sessions = &self.c_cal.GetSessions()
+        cdef vector[session_t].const_iterator it = deref(sessions).begin()
+        cdef int i = 1
+        cdef sec_t sos_, eos_
+        str_sessions = []
+        while it != deref(sessions).end():
+            sos_ = deref(it).first
+            eos_ = deref(it).second
+            if eos_ <= sos_:
+                str_sessions.append(f"\t{i}) {time_fmt(sos_)}-{time_fmt(eos_)}(+1 days)");
+            else:
+                str_sessions.append(f"\t{i}) {time_fmt(sos_)}-{time_fmt(eos_)}");
+            preincrement(it)
+        
+        str_bartimestamps = [];
+        cdef int k
+        cdef vector[int] bts
+        cdef long long bts_size
+        cdef const vector[int]* intervals = &self.c_cal.GetIntervals()
+        cdef vector[int].const_iterator it2 = deref(intervals).begin()
+        while it2 != deref(intervals).end():
+            k = deref(it2)
+            bts = self.c_cal.GetBartimes(k)
+            unit = "m"
+            k /= 60;
+            if k >= 60:
+                k /= 60;
+                unit = "H"
+            bts_size = bts.size()
+            bt_strs = [time_fmt(bts[i]) for i in range(bts_size)]
+            if bts_size > 8:
+                str_bartimestamps.append(f"\t{k}{unit})\t[{bt_strs[0]}, {bt_strs[1]}, {bt_strs[2]}, {bt_strs[3]},...{bt_strs[-4]}, {bt_strs[-3]}, {bt_strs[-2]}, {bt_strs[-1]}]");
+            else:
+                str_bartimestamps.append(f"\t{k}{unit})\t[{','.join(bt_strs)}]");
+            preincrement(it2)
+        ret = "时区: " + self.c_cal.GetTimezone().decode('UTF-8') + "\n交易时间段:\n"
+        ret += "\n".join(str_sessions)
+        ret += "\nK线时间点划分:\n "
+        ret += "\n".join(str_bartimestamps)
+        return ret
