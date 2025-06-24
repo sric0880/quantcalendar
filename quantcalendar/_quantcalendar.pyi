@@ -186,6 +186,13 @@ class PyCalendar:
          * end : native timestamp. Timezone will be ignored when dt is datetime type
         """
 
+    def get_bartimes(self, interval: int) -> list[int]:
+        """ get bartimes in time of day
+
+        Params:
+         * interval : interval seconds of bars
+        """
+
     def get_next_open_close(self, dt: Union[datetime, datetime64]) -> tuple[int, int]:
         """ 给定时间`dt`, 获取下一次(开盘, 收盘)时间。休息时间不算是收盘，每天只有一次开盘收盘时间。
 

@@ -91,6 +91,7 @@ def test_trading_time(to_datetime64):
 
 def test_next_bartime(to_datetime64):
     cal = Time7x24Calendar()
+    print(cal)
     bartime_testcases = [
         (to_datetime64(2024, 9, 13), to_seconds(2024, 9, 13), 60),
         (to_datetime64(2024, 9, 13), to_seconds(2024, 9, 13), 300),

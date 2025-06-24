@@ -122,6 +122,26 @@ public:
     return GetBartimesImpl(interval, start, count, time_point::min());
   }
 
+  /**
+   * 获取一日内的所有K线时间点 time of day
+   */
+  std::vector<int> GetBartimes(seconds interval) const
+  {
+    return GetBartimes(interval.count());
+  }
+
+  /**
+   * 获取一日内的所有K线时间点 time of day
+   */
+  std::vector<int> GetBartimes(int interval) const
+  {
+    auto iter = bartimes_.find(interval);
+    if (iter == bartimes_.end()) {
+      return std::vector<int>();
+    }
+    return iter->second;
+  }
+
   const auto &GetBartimes() const
   {
     return bartimes_;
