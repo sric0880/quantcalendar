@@ -8,14 +8,6 @@ import pytest
 from datetime_helper import to_seconds
 
 from quantcalendar import CalendarCTP, bar_unit, RangeClosed, timestamp_s
-from calendar_data import cn_future, cn_future_sessions
-
-
-@pytest.fixture(scope="module", autouse=True)
-def _client():
-    dates_arr = [(timestamp_s(day["_id"].to_datetime64()), day["status"]) for day in cn_future]
-    sessions = [(s["_id"].encode("ascii"), s["market_time"]) for s in cn_future_sessions]
-    CalendarCTP.Init(dates_arr, sessions)
 
 
 def _ctp_close_time(product_id, year, month, day):

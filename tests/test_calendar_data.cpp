@@ -6,7 +6,8 @@
 
 #include "quantcalendar/dates.h"
 #include "quantcalendar/calendar.h"
-#include "calendar_data.h"
+
+extern const std::vector<qmc::date_status_item> cn_stock;
 
 int main(int argv, char *args[])
 {
@@ -30,14 +31,8 @@ int main(int argv, char *args[])
   --iter5;
   assert(iter5.is_end());
 
-  qmc::CalendarAstock::Init(cn_stock);
   const qmc::CalendarAstock &astock_cal = qmc::CalendarAstock::GetInstance();
-
-  auto cpy_cn_future_sessions = cn_future_sessions;
-  qmc::CalendarCTP::Init(cn_future, std::move(cpy_cn_future_sessions));
   auto const &ctp_cal = qmc::CalendarCTP::GetInstance("ag2405");
-
   auto const &ctp_cal1 = qmc::CalendarCTP::GetInstance("IH");
-
   auto const &cal7x24 = qmc::Time7x24Calendar::GetInstance();
 }

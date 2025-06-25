@@ -34,6 +34,10 @@ def output_cpp(updating):
 #include "quantcalendar/dates.h"
 #include "quantcalendar/calendar.h"
 
+extern const std::vector<qmc::date_status_item> cn_stock;
+extern const std::vector<qmc::date_status_item> cn_future;
+extern const std::vector<qmc::CalendarCTP::session_item> cn_future_sessions;
+
 """
     def date_arr_format(data):
         arrs = []
@@ -54,9 +58,9 @@ def output_cpp(updating):
 
 
     declarations = {
-        "cn_stock" : "const static std::vector<qmc::date_status_item>",
-        "cn_future": "const static std::vector<qmc::date_status_item>",
-        "cn_future_sessions": "const static std::vector<qmc::CalendarCTP::session_item>"
+        "cn_stock" : "const std::vector<qmc::date_status_item>",
+        "cn_future": "const std::vector<qmc::date_status_item>",
+        "cn_future_sessions": "const std::vector<qmc::CalendarCTP::session_item>"
     }
     data_formatter = {
         "cn_stock" : date_arr_format,
@@ -66,7 +70,7 @@ def output_cpp(updating):
     content = """
 {declare} {var}{{{data}}};
 """
-    with open("calendar_data.h", "w") as f:
+    with open("calendar_data.cpp", "w") as f:
         f.write(file_header)
         for col, data in updating.items():
             f.write(content.format(declare=declarations[col], var=col, data=data_formatter[col](data)))

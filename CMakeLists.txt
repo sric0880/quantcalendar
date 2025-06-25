@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.15...3.26)
 # to use dynamic lookup for buiding python modules.
 # Weak link test that need c compiler cannot be skipped.
 # @see https://blog.tim-smith.us/2015/09/python-extension-modules-os-x/
-project(quantcalendar VERSION 1.0 LANGUAGES C CXX)
+project(quantcalendar VERSION 2025.6 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -15,6 +15,13 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(unordered_dense REQUIRED)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(SOURCES
+  "src/calendar.cpp"
+  "src/dates.cpp"
+  "src/datetime.cpp"
+  "src/exceptions.cpp"
+  "src/calendar_data.cpp"
+  "src/init.cpp")
 
 # We are using the SKBUILD variable, which is defined when scikit-build is
 # running the CMake build, to control building the Python wrapper. This allows
@@ -39,7 +46,7 @@ if(DEFINED SKBUILD)
 
   add_cython_target(_quantcalendar "quantcalendar/_quantcalendar.pyx" CXX)
   add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
-  add_library(_quantcalendar MODULE "src/calendar.cpp" "src/dates.cpp" "src/datetime.cpp" "src/exceptions.cpp" ${_quantcalendar})
+  add_library(_quantcalendar MODULE ${SOURCES} ${_quantcalendar})
   target_link_libraries(_quantcalendar
     unordered_dense::unordered_dense)
   python_extension_module(_quantcalendar)
@@ -51,7 +58,7 @@ if(DEFINED SKBUILD)
     "quantcalendar/_quantcalendar.pyi"
     DESTINATION quantcalendar)
 else()
-  add_library(quantcalendar STATIC "src/calendar.cpp" "src/dates.cpp" "src/datetime.cpp" "src/exceptions.cpp")
+  add_library(quantcalendar SHARED ${SOURCES})
   target_link_libraries(quantcalendar
     PUBLIC unordered_dense::unordered_dense)
 
@@ -59,7 +66,6 @@ else()
   include(CTest)
   if (BUILD_TESTING)
       # test 
-      include_directories("${CMAKE_CURRENT_SOURCE_DIR}/tests")
       add_executable(test_calendar_data "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_calendar_data.cpp")
       target_link_libraries(test_calendar_data quantcalendar)
       add_test(NAME "test_calendar_data" COMMAND "test_calendar_data" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

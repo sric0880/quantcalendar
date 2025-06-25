@@ -9,7 +9,7 @@
 
 ***数据需自行整理导入数据库***
 
-本库测试使用MongoDB。使用接口参考测试用例`tests`
+使用接口参考测试用例`tests`
 
 ## 特性
 
@@ -46,9 +46,11 @@ print(timestamp_us(d3))
 
 ### 依赖项
 
-2. 下载并安装 [unordered_dense](https://github.com/martinus/unordered_dense)
+1. 下载并安装 [unordered_dense](https://github.com/martinus/unordered_dense)
 
 ### C++
+
+可以通过传入 -DBUILD_TESTING=OFF禁止测试编译
 
 #### MacOS/Linux
 
@@ -59,14 +61,6 @@ sudo cmake --build ./build --target install
 ```
 
 #### Windows
-
-MongoDB只是在测试用例中使用，如果不测试，可以不填写`CMAKE_PREFIX_PATH`，可以通过传入 -DBUILD_TESTING=OFF禁止测试编译。
-如果需要运行测试，才需要填写`CMAKE_PREFIX_PATH`。两种方法修改`CMAKE_PREFIX_PATH`:
-
-- 在Visual Studio中调试：修改`CMakePresets.json`中的configurePresets > windows-base > CMAKE_PREFIX_PATH。这个是前面安装mongo cxx driver的`CMAKE_INSTALL_PREFIX`，告诉CMake去哪个目录查找MongoDB的库文件。
-- 命令行输入-DCMAKE_PREFIX_PATH。
-
-命令行安装：
 
 ```sh
 cmake -S . -B ./build -G "Visual Studio 17 2022" -DBUILD_TESTING=OFF

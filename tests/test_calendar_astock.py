@@ -5,14 +5,6 @@ import pytest
 from datetime_helper import to_seconds
 
 from quantcalendar import CalendarAstock, bar_unit, timestamp_s
-from calendar_data import cn_stock
-
-
-@pytest.fixture(scope="module", autouse=True)
-def _client():
-    dates_arr = [(timestamp_s(day["_id"].to_datetime64()), day["status"]) for day in cn_stock]
-    CalendarAstock.Init(dates_arr)
-
 
 # fmt: off
 def test_tradedays(to_datetime64):
