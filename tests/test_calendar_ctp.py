@@ -73,7 +73,9 @@ def test_trading_time(product_id, to_datetime64):
     assert cal.is_trading(to_datetime64(2023, 6, 30)) == (product_id != "IH")
     assert cal.is_trading(to_datetime64(2023, 6, 30, 23, 59, 59)) == (product_id != "IH")
     assert cal.is_trading(to_datetime64(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
+    assert cal.is_trading(to_datetime64(2023, 7, 1, 2, 30, 0)) == (product_id != "IH")
     assert cal.is_trading_day(to_datetime64(2023, 7, 1, 2, 29, 0)) == (product_id != "IH")
+    assert cal.is_trading_day(to_datetime64(2023, 7, 1, 2, 30, 0)) == (product_id != "IH")
     assert cal.is_trading(to_datetime64(2023, 6, 21, 20, 30, 0)) == False
     assert cal.is_trading(to_datetime64(2023, 6, 22)) == False
     assert cal.is_trading(to_datetime64(2024, 9, 13, 21)) == False

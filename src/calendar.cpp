@@ -293,7 +293,9 @@ bool Calendar<Data>::IsTradingDay(time_point dt) const
   dt -= seconds(offset_);
   try
   {
-    auto &node = tradedays->At(to_daily(dt));
+auto day = to_daily(dt);
+    if (dt == time_point_cast<days>(dt) && offset_ > 0) day -= iseconds_a_day;
+    auto &node = tradedays->At(day);
     return node.IsTrading();
   }
   catch (std::out_of_range &e)
