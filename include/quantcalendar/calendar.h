@@ -5,6 +5,8 @@
 #include <vector>
 #include <ratio>
 #include <functional> // for reference_wrapper
+#include <optional>
+#include <variant>
 
 #include "quantcalendar/datetime.h"
 #include "quantcalendar/dates.h"
@@ -13,6 +15,12 @@
 NS_QMC_BEGIN
 
 using session_t = std::pair<sec_t, sec_t>;
+// cannot use tuple because it cann't be exported to cython
+struct CallAuctionSession {
+  sec_t start_time;
+  sec_t end_time;
+  sec_t clearing_price_time;
+};
 using time_point = system_clock::time_point;
 using days = duration<int, std::ratio_multiply<std::ratio<24>, hours::period>>;
 
@@ -136,7 +144,8 @@ public:
   std::vector<int> GetBartimes(int interval) const
   {
     auto iter = bartimes_.find(interval);
-    if (iter == bartimes_.end()) {
+    if (iter == bartimes_.end())
+    {
       return std::vector<int>();
     }
     return iter->second;
@@ -173,7 +182,7 @@ public:
   const session_t &GetOpenCloseTime() const { return open_close_sessions_[0]; }
   const std::vector<int> &GetIntervals() const { return intervals_; }
   const std::string &GetTimezone() const { return tz_; }
-  // 判断时间`dt`是否正在交易中, `dt`时间必须是交易所本地时间
+  // 判断时间`dt`是否正在交易中（不包括开盘集合竞价，包括收盘集合竞价）, `dt`时间必须是交易所本地时间
   bool IsTrading(time_point dt) const;
   // 判断是否交易日。如果IsTrading返回true，那么IsTradingDay必然返回true，反过来不一定成立。
   // 但是当IsTradingDay返回false，那么IsTrading必然返回false。
@@ -235,15 +244,54 @@ public:
     }
   }
 
+  /// @brief 给定时间`dt`, 获取当前或下一次(开始, 结束, 定价)开盘集合竞价时间。
+  /// @param dt 当前时间
+  /// @return tuple(开盘, 收盘, 定价)时间
+  std::optional<CallAuctionSession> GetNextOCASession(time_point dt) const { return FindNextCASession(dt, true); }
+  /// @brief 给定时间`dt`, 获取当前下一次(开始, 结束, 定价)收盘集合竞价时间
+  /// @param dt 当前时间
+  /// @return tuple(开盘, 收盘, 定价)时间
+  std::optional<CallAuctionSession> GetNextCCASession(time_point dt) const { return FindNextCASession(dt, false); }
+  // 返回开盘集合竞价时间段(相对)
+  const std::vector<CallAuctionSession> &GetOCASessions() const { return opening_call_auctions_; }
+  // 返回收盘集合竞价时间段(相对)
+  const std::vector<CallAuctionSession> &GetCCASessions() const { return closing_call_auctions_; }
+  // 是否开盘集合竞价
+  bool IsOpeningCallAuction(time_point dt, sec_t start_offset = 0, sec_t end_offset = 0) const
+  {
+    auto s = GetNextOCASession(dt);
+    return s.has_value() && dt >= time_point(seconds(s.value().start_time + start_offset)) &&
+           dt <= time_point(seconds(s.value().end_time + end_offset));
+  }
+  // 是否收盘集合竞价
+  bool IsClosingCallAuction(time_point dt, sec_t start_offset = 0, sec_t end_offset = 0) const
+  {
+    auto s = GetNextCCASession(dt);
+    return s.has_value() && dt >= time_point(seconds(s.value().start_time + start_offset)) &&
+           dt <= time_point(seconds(s.value().end_time + end_offset));
+  }
+  // 是否集合竞价(从开始时间一直到收盘/开盘价产生)
+  bool IsCallAuction(time_point dt) const { return IsOpeningCallAuction(dt) || IsClosingCallAuction(dt); };
+  // 是否连续竞价时间
+  bool IsContinuousAuction(time_point dt) const { return !IsCallAuction(dt) && IsTrading(dt); };
+  // 是否接受订单申报，默认为集合竞价和连续竞价阶段
+  bool IsSubmitOrderAllowed(time_point dt) const { return IsTrading(dt) || IsCallAuction(dt); }
+  // 是否接受订单撤销，默认集合竞价都不能撤单
+  bool IsCancelOrderAllowed(time_point dt) const { return IsContinuousAuction(dt); }
+
 protected:
   /// @brief
   /// @param sessions 开盘-收盘时间(包括中间的休息时间), 按当天秒数来算 eg. ((32400, 36900), (37800, 41400), (48600, 54000))
+  /// @param opening_ca_sessions 开盘集合竞价时间
+  /// @param closing_ca_sessions 收盘集合竞价时间
   /// @param intervals 支持的K线周期间隔,单位s,只支持分钟和小时 eg. 1min, 5min, 10min 1h 2h...
   /// @param tz 时区
   /// @param offset 有些市场交易时间会跨越凌晨0点, offset表示超过0点的时间差, 越过0点表示下一个交易日
   /// @param bartime_right K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间 @todo:  `left`暂未实现
   Calendar(const Data &dates_container,
-           std::vector<session_t> &&sessions,
+           const std::vector<session_t> &sessions,
+           const std::vector<CallAuctionSession> &opening_ca_sessions,
+           const std::vector<CallAuctionSession> &closing_ca_sessions,
            const std::vector<seconds> &intervals,
            std::string_view tz,
            sec_t offset = 0,
@@ -258,6 +306,10 @@ private:
   sec_t offset_minus_day_;
 
   std::vector<session_t> sorted_sessions_;
+  // 一天可能有多次开盘集合竞价
+  std::vector<CallAuctionSession> opening_call_auctions_;
+  // 一般只有一次尾盘集合竞价
+  std::vector<CallAuctionSession> closing_call_auctions_;
 
   // 本来一天只有一次开盘收盘时间，但是为了兼容特殊日子，开收盘时间依然用vector表示
   std::vector<session_t> open_close_sessions_;
@@ -277,11 +329,17 @@ private:
   sec_t CombineDatetimeSos(sec_t tradingday, sec_t time) const;
   const std::shared_ptr<SpecialSessions> GetSpecialSessions(sec_t dt) const;
   session_t FindNextSession(time_point dt, bool with_breaks) const;
+  std::optional<CallAuctionSession> FindNextCASession(time_point dt, bool is_opening) const;
 };
 
 class CalendarAstock : public Calendar<DatesArray>
 {
 public:
+  bool IsCancelOrderAllowed(time_point dt) const
+  {
+    // 集合竞价前5分钟可以撤单09:15--09:20
+    return IsContinuousAuction(dt) || IsOpeningCallAuction(dt, 0, -300);
+  }
   static void Init(const std::vector<date_status_item> &dates_arr)
   {
     dates_container.Init(dates_arr);
@@ -299,6 +357,8 @@ class CalendarCTP : public Calendar<DatesArray>
 public:
   using session_item = std::tuple<std::string /*product_id*/, std::vector<session_t> /*market time*/>;
   bool HasNight() const;
+  // TODO 需要确认期货收盘集合竞价是否可以撤单
+  bool IsCancelOrderAllowed(time_point dt) const { return IsContinuousAuction(dt) || IsOpeningCallAuction(dt); }
   static void Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions);
   static const CalendarCTP &GetInstance(const std::string &symbol = "");
 
@@ -317,5 +377,8 @@ private:
   using Calendar<Date7x24Array>::Calendar;
   static Date7x24Array dates_container;
 };
+
+using CalendarVar = std::variant<const qmc::CalendarCTP *,
+                                 const qmc::CalendarAstock *>;
 
 NS_QMC_END

@@ -313,6 +313,47 @@ cdef class PyCalendar_DatesArray:
         else:
             return self.c_cal.IsTradingTime(seconds(tm), rangeclosed)
 
+    def get_next_oca_session(self, dt):
+        cdef optional[CallAuctionSession] ret = self.c_cal.GetNextOCASession(to_timepoint(dt))
+        return (ret.value().start_time, ret.value().end_time, ret.value().clearing_price_time) if ret.has_value() else None
+
+    def get_next_cca_session(self, dt):
+        cdef optional[CallAuctionSession] ret = self.c_cal.GetNextCCASession(to_timepoint(dt))
+        return (ret.value().start_time, ret.value().end_time, ret.value().clearing_price_time) if ret.has_value() else None
+
+    def get_oca_sessions(self):
+        cdef const vector[CallAuctionSession]* sessions = &self.c_cal.GetOCASessions()
+        cdef vector[CallAuctionSession].const_iterator it = deref(sessions).begin()
+        ret = []
+        while it != deref(sessions).end():
+            ret.append((deref(it).start_time, deref(it).end_time, deref(it).clearing_price_time))
+            preincrement(it)
+        return ret
+
+    def get_cca_sessions(self):
+        cdef const vector[CallAuctionSession]* sessions = &self.c_cal.GetCCASessions()
+        cdef vector[CallAuctionSession].const_iterator it = deref(sessions).begin()
+        ret = []
+        while it != deref(sessions).end():
+            ret.append((deref(it).start_time, deref(it).end_time, deref(it).clearing_price_time))
+            preincrement(it)
+        return ret
+
+    def is_opening_call_auction(self, dt, int start_offset = 0, int end_offset = 0):
+        return self.c_cal.IsOpeningCallAuction(to_timepoint(dt), start_offset, end_offset)
+
+    def is_closing_call_auction(self, dt, int start_offset = 0, int end_offset = 0):
+        return self.c_cal.IsClosingCallAuction(to_timepoint(dt), start_offset, end_offset)
+
+    def is_call_auction(self, dt):
+        return self.c_cal.IsCallAuction(to_timepoint(dt))
+
+    def is_continuous_auction(self, dt):
+        return self.c_cal.IsContinuousAuction(to_timepoint(dt))
+
+    def is_submit_order_allowed(self, dt):
+        return self.c_cal.IsSubmitOrderAllowed(to_timepoint(dt))
+
     def __str__(self) -> str:
         cdef const vector[session_t]* sessions = &self.c_cal.GetSessions()
         cdef vector[session_t].const_iterator it = deref(sessions).begin()

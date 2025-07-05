@@ -68,12 +68,16 @@ auto calc_bartimestamp_right(int session_start, int session_end, const std::vect
 template <class Data>
 Calendar<Data>::Calendar(
     const Data &dates_container,
-    std::vector<session_t> &&sessions,
+    const std::vector<session_t> &sessions,
+    const std::vector<CallAuctionSession> &opening_ca_sessions,
+    const std::vector<CallAuctionSession> &closing_ca_sessions,
     const std::vector<seconds> &intervals,
     std::string_view tz,
     sec_t offset,
     bool bartime_right) : tradedays(&dates_container),
-                          sessions_(std::move(sessions)),
+                          sessions_(sessions),
+                          opening_call_auctions_(opening_ca_sessions),
+                          closing_call_auctions_(closing_ca_sessions),
                           intervals_(intervals.size()),
                           tz_(tz),
                           offset_(offset),
@@ -281,6 +285,34 @@ session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
 }
 
 template <class Data>
+std::optional<CallAuctionSession> Calendar<Data>::FindNextCASession(time_point dt, bool is_opening) const
+{
+  const auto &cas = is_opening ? opening_call_auctions_ : closing_call_auctions_;
+  if (cas.size() == 0)
+    return std::nullopt;
+  while (1)
+  {
+    auto oc = GetNextSession(dt);
+    auto tp = is_opening ? oc.first : oc.second;
+    auto tm = tp % iseconds_a_day;
+    for (auto [_1, _2, _3] : cas)
+    {
+      if (is_opening)
+      {
+        if (_3 == tm)
+          return std::optional<CallAuctionSession>({tp + _1, tp + _2, tp});
+      }
+      else
+      {
+        if (_2 == tm)
+          return std::optional<CallAuctionSession>({tp + _1, tp, tp + _3});
+      }
+    }
+    dt = time_point(seconds(tp+1));
+  }
+}
+
+template <class Data>
 bool Calendar<Data>::IsTrading(time_point dt) const
 {
   auto [sos_dt, eos_dt] = GetNextSession(dt);
@@ -293,8 +325,9 @@ bool Calendar<Data>::IsTradingDay(time_point dt) const
   dt -= seconds(offset_);
   try
   {
-auto day = to_daily(dt);
-    if (dt == time_point_cast<days>(dt) && offset_ > 0) day -= iseconds_a_day;
+    auto day = to_daily(dt);
+    if (dt == time_point_cast<days>(dt) && offset_ > 0)
+      day -= iseconds_a_day;
     auto &node = tradedays->At(day);
     return node.IsTrading();
   }
@@ -372,7 +405,12 @@ template class Calendar<Date7x24Array>;
 DatesArray CalendarAstock::dates_container;
 const CalendarAstock &CalendarAstock::GetInstance(const std::string &symbol)
 {
-  static CalendarAstock cal(dates_container, {{34200, 41400}, {46800, 54000}}, {1min, 5min, 15min, 30min, 1h, 2h}, "Asia/Shanghai");
+  static CalendarAstock cal(dates_container,
+                            {{34200, 41400}, {46800, 54000}},
+                            {{-900, -300, 34200}},
+                            {{-180, 54000, 120}},
+                            {1min, 5min, 15min, 30min, 1h, 2h},
+                            "Asia/Shanghai");
   return cal;
 }
 #pragma endregion
@@ -424,17 +462,47 @@ void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vect
   dates_container.Init(dates_arr);
   std::vector<seconds> intervals{1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h};
   const std::string tz("Asia/Shanghai");
-  constexpr const sec_t offset = duration_cast<seconds>(2h + 30min).count();
+  constexpr sec_t offset = duration_cast<seconds>(2h + 30min).count();
   // common sessions
-  calendar_ctps.emplace("", CalendarCTP(dates_container, {{75600, 9000}, {32400, 54900}}, intervals, tz, offset));
+  calendar_ctps.emplace("", CalendarCTP(dates_container,
+                                        {{75600, 9000}, {32400, 54900}},
+                                        {{-300, -60, 75600}, {-300, -60, 32400}}, // 开盘前5分钟集合竞价，并且前一分钟不能申报不能撤单，前4分钟可以申报可以撤单
+                                        {},                                       // 一般品种无收盘集合竞价
+                                        intervals,
+                                        tz,
+                                        offset));
+  // TODO: 暂时没有收盘集合竞价（有些品种有收盘集合竞价，这里需要区分）
+  constexpr std::array<std::string, 0> products_has_closing_ca{};
   // custom sessions
   for (auto &[product_id, market_time] : sessions)
   {
     uppercase(product_id);
     sec_t special_offset = 0;
-    if (market_time[0].second <= offset)
+    if (market_time[0].second <= offset) // 跨0点
       special_offset = market_time[0].second;
-    calendar_ctps.emplace(product_id, CalendarCTP(dates_container, std::move(market_time), intervals, tz, special_offset));
+    std::vector<CallAuctionSession> opening_call_auctions;
+    auto first_open_time = market_time[0].first;
+    opening_call_auctions.push_back({-300, -60, first_open_time});
+    if (first_open_time >= 21 * 3600) // 夜盘都是晚上9点开始
+    {
+      // 还有日盘开盘集合竞价（TODO: 是否所有品种的日盘开盘都有集合竞价？）
+      auto second_open_time = market_time[1].first;
+      opening_call_auctions.push_back({-300, -60, second_open_time});
+    }
+    std::vector<CallAuctionSession> closing_call_auctions;
+    auto iter = std::find(products_has_closing_ca.begin(), products_has_closing_ca.end(), product_id);
+    if (iter != products_has_closing_ca.end())
+    {
+      closing_call_auctions.push_back({-300, market_time[market_time.size() - 1].second, 0});
+    }
+
+    calendar_ctps.emplace(product_id, CalendarCTP(dates_container,
+                                                  market_time,
+                                                  opening_call_auctions,
+                                                  closing_call_auctions,
+                                                  intervals,
+                                                  tz,
+                                                  special_offset));
   }
   // set special sessions
   // 特殊规则：交易日夜盘不开盘。第二天是节假日，夜盘不交易
@@ -510,7 +578,7 @@ const CalendarCTP &CalendarCTP::GetInstance(const std::string &symbol)
 Date7x24Array Time7x24Calendar::dates_container;
 const Time7x24Calendar &Time7x24Calendar::GetInstance(const std::string &symbol)
 {
-  static Time7x24Calendar cal(dates_container, {{0, 86400}}, {1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h}, "UTC");
+  static Time7x24Calendar cal(dates_container, {{0, 86400}}, {}, {}, {1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h}, "UTC");
   return cal;
 }
 

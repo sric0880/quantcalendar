@@ -1,5 +1,6 @@
 # cython: language_level=3
 from libcpp.vector cimport vector
+from libcpp.optional cimport optional
 from libcpp.pair cimport pair
 from libcpp.string cimport string
 
@@ -151,6 +152,10 @@ cdef extern from "quantcalendar/dates.h" namespace "qmc" nogil:
 
 cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	ctypedef pair[sec_t, sec_t] session_t
+	cdef cppclass CallAuctionSession:
+		sec_t start_time
+		sec_t end_time
+		sec_t clearing_price_time
 	cpdef enum class RangeClosed:
 		NONE=0
 		LEFT=1,
@@ -174,8 +179,18 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		bint IsTradingDay(tp dt) except +
 		bint IsTradingTime[U](U tm)
 		bint IsTradingTime[U](U tm, RangeClosed rc)
+		optional[CallAuctionSession] GetNextOCASession(tp dt)
+		optional[CallAuctionSession] GetNextCCASession(tp dt)
+		const vector[CallAuctionSession] &GetOCASessions()
+		const vector[CallAuctionSession] &GetCCASessions()
+		bint IsOpeningCallAuction(tp dt, sec_t start_offset, sec_t end_offset)
+		bint IsClosingCallAuction(tp dt, sec_t start_offset, sec_t end_offset)
+		bint IsCallAuction(tp dt)
+		bint IsContinuousAuction(tp dt)
+		bint IsSubmitOrderAllowed(tp dt)
 
 	cdef cppclass CalendarAstock(Calendar[DatesArray]):
+		bint IsCancelOrderAllowed(tp dt)
 		@staticmethod
 		void Init(const vector[date_status_item] &dates_arr) except +
 		@staticmethod
@@ -184,11 +199,13 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 	cdef cppclass CalendarCTP(Calendar[DatesArray]):
 		ctypedef pair[string, vector[session_t]] session_item
 		bint HasNight()
+		bint IsCancelOrderAllowed(tp dt)
 		@staticmethod
 		void Init(const vector[date_status_item] &dates_arr, vector[session_item] sessions) except + # sessions is rvalue
 		@staticmethod
 		CalendarCTP &GetInstance(const string &symbol) except +
 
 	cdef cppclass Time7x24Calendar(Calendar[Date7x24Array]):
+		bint IsCancelOrderAllowed(tp dt)
 		@staticmethod
 		Time7x24Calendar &GetInstance(const string &symbol) except +
