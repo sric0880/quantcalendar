@@ -130,6 +130,69 @@ def test_get_bartimes(to_datetime64):
     assert cal.get_bartimes_between(bar_unit.hour, to_datetime64(2024, 9, 13, 10, 31), to_datetime64(2024, 9, 13, 11, 30)) == []
 
 
+def test_call_auctions(to_datetime64):
+    cal = CalendarAstock()
+    assert cal.get_oca_sessions() == [(-900, -300, 34200)]
+    assert cal.get_cca_sessions() == [(-180, 54000, 120)]
+    oca = (to_seconds(2024, 12, 13, 9, 15), to_seconds(2024, 12, 13, 9, 25), to_seconds(2024, 12, 13, 9, 30))
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9)) == oca
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9, 15)) == oca
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9, 20)) == oca
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9, 25)) == oca
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9, 25, 1)) == oca
+
+    oca1 = (to_seconds(2024, 12, 16, 9, 15), to_seconds(2024, 12, 16, 9, 25), to_seconds(2024, 12, 16, 9, 30))
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9, 30)) == oca1
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 13, 9, 30, 1)) == oca1
+    assert cal.get_next_oca_session(to_datetime64(2024, 12, 14)) == oca1
+
+    cca = (to_seconds(2024, 12, 13, 14, 57), to_seconds(2024, 12, 13, 15), to_seconds(2024, 12, 13, 15, 2))
+    assert cal.get_next_cca_session(to_datetime64(2024, 12, 13, 9, 30)) == cca
+    assert cal.get_next_cca_session(to_datetime64(2024, 12, 13, 12)) == cca
+    assert cal.get_next_cca_session(to_datetime64(2024, 12, 13, 14, 57)) == cca
+    assert cal.get_next_cca_session(to_datetime64(2024, 12, 13, 15)) == cca
+
+    cca1 = (to_seconds(2024, 12, 16, 14, 57), to_seconds(2024, 12, 16, 15), to_seconds(2024, 12, 16, 15, 2))
+    assert cal.get_next_cca_session(to_datetime64(2024, 12, 13, 15, 1)) == cca1
+
+    assert cal.is_opening_call_auction(to_datetime64(2024, 12, 13, 9, 15)) == True == cal.is_call_auction(to_datetime64(2024, 12, 13, 9, 15))
+    assert cal.is_opening_call_auction(to_datetime64(2024, 12, 13, 9, 15), 1) == False
+    assert cal.is_opening_call_auction(to_datetime64(2024, 12, 13, 9, 25)) == True == cal.is_call_auction(to_datetime64(2024, 12, 13, 9, 25))
+    assert cal.is_opening_call_auction(to_datetime64(2024, 12, 13, 9, 25, 1)) == False
+    assert cal.is_opening_call_auction(to_datetime64(2024, 12, 13, 9, 25), 0, -1) == False
+    assert cal.is_opening_call_auction(to_datetime64(2024, 12, 15, 9, 25)) == False
+
+    assert cal.is_closing_call_auction(to_datetime64(2024, 12, 16, 9, 20)) == False
+    assert cal.is_closing_call_auction(to_datetime64(2024, 12, 16, 14, 57)) == True == cal.is_call_auction(to_datetime64(2024, 12, 16, 14, 57))
+    assert cal.is_closing_call_auction(to_datetime64(2024, 12, 16, 15)) == True == cal.is_call_auction(to_datetime64(2024, 12, 16, 15))
+    assert cal.is_closing_call_auction(to_datetime64(2024, 12, 16, 15, 1)) == False
+    assert cal.is_closing_call_auction(to_datetime64(2024, 12, 15, 15)) == False
+
+    assert cal.is_continuous_auction(to_datetime64(2024, 12, 16, 15)) == False
+    assert cal.is_continuous_auction(to_datetime64(2024, 12, 16, 14, 57)) == False
+    assert cal.is_continuous_auction(to_datetime64(2024, 12, 16, 14, 56, 59))
+    assert cal.is_continuous_auction(to_datetime64(2024, 12, 16, 12)) == False
+
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 9)) == False 
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 9, 15))
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 9, 25))
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 9, 25, 1)) == False
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 9, 30))
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 12)) == False
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 13))
+    assert cal.is_submit_order_allowed(to_datetime64(2024, 12, 16, 15))
+
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 9, 15))
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 9, 18))
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 9, 20)) # TODO: 到底能不能撤单
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 9, 25)) == False
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 9, 26)) == False
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 9, 30))
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 11, 30))
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 13))
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 15)) == False
+    assert cal.is_cancel_order_allowed(to_datetime64(2024, 12, 16, 14, 57)) == False
+
 def test_exceptions(to_datetime64):
     cal = CalendarAstock()
     # invalid arguments: interval

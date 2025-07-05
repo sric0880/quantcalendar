@@ -33,6 +33,9 @@ cdef class PyCalendarAstock(PyCalendar_DatesArray):
     def __str__(self) -> str:
         return super().__str__()
 
+    def is_cancel_order_allowed(self, dt):
+        return (<CalendarAstock*>self.c_cal).IsCancelOrderAllowed(to_timepoint(dt))
+
 cdef class PyCalendarCTP(PyCalendar_DatesArray):
     cdef public str symbol
 
@@ -45,7 +48,7 @@ cdef class PyCalendarCTP(PyCalendar_DatesArray):
         return (PyCalendarCTP,(self.symbol,))
 
     def has_night(self) -> bool:
-        return (<CalendarCTP*>self.c_cal).HasNight()
+        return (<const CalendarCTP*>self.c_cal).HasNight()
 
     @staticmethod
     def Init(dates_arr, sessions):
@@ -53,6 +56,9 @@ cdef class PyCalendarCTP(PyCalendar_DatesArray):
 
     def __str__(self) -> str:
         return super().__str__()
+
+    def is_cancel_order_allowed(self, dt):
+        return (<CalendarCTP*>self.c_cal).IsCancelOrderAllowed(to_timepoint(dt))
 
 cdef class PyTime7x24Calendar(PyCalendar_Date7x24Array):
     def __cinit__(self):
@@ -70,6 +76,9 @@ cdef class PyTime7x24Calendar(PyCalendar_Date7x24Array):
 
     def is_trading_time(self, tm, rangeclosed: RangeClosed = RangeClosed.BOTH):
         return True
+
+    def is_cancel_order_allowed(self, dt):
+        return (<Time7x24Calendar*>self.c_cal).IsCancelOrderAllowed(to_timepoint(dt))
 
     def __str__(self) -> str:
         return super().__str__()

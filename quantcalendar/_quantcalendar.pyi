@@ -271,8 +271,75 @@ class PyCalendar:
         """ 判断是否交易时间段，不判断是否交易，只要在时间段内，都返回True
 
         Params:
-         * sec: time of day in seconds
-         * rangeclosed: indicates range closed type
+         * sec : time of day in seconds
+         * rangeclosed : indicates range closed type
+        """
+
+    def get_next_oca_session(self, dt: Union[datetime, datetime64]) -> None | tuple[int,int,int]:
+        """ 给定时间`dt`, 获取当前或下一次(开始, 结束, 定价)开盘集合竞价时间
+
+        Params:
+         - dt : 当前时间
+
+        Returns:
+         tuple(开盘, 收盘, 定价)时间
+        """
+
+    def get_next_cca_session(self, dt: Union[datetime, datetime64]) -> None | tuple[int,int,int]:
+        """
+        给定时间`dt`, 获取当前或下一次(开始, 结束, 定价)收盘集合竞价时间
+
+        Params:
+         - dt : 当前时间
+
+        Returns:
+         tuple(开盘, 收盘, 定价)时间
+        """
+
+    def get_oca_sessions(self) -> list[tuple[int,int,int]]:
+        """返回开盘集合竞价时间段(相对)
+
+        Returns:
+          list of tuple(start_time, end_time, clearing_price_time(open time))
+        """
+
+    def get_cca_sessions(self) -> list[tuple[int,int,int]]:
+        """返回收盘集合竞价时间段(相对)
+
+        Returns:
+          list of tuple(start_time, end_time(close time), clearing_price_time)
+        """
+
+    def is_opening_call_auction(self, dt: Union[datetime, datetime64]) -> bool:
+        """是否开盘集合竞价时间
+        """
+
+    def is_opening_call_auction(self, dt: Union[datetime, datetime64], start_offset: int, end_offset: int) -> bool:
+        """是否开盘集合竞价时间
+        """
+
+    def is_closing_call_auction(self, dt: Union[datetime, datetime64]) -> bool:
+        """是否收盘集合竞价时间
+        """
+
+    def is_closing_call_auction(self, dt: Union[datetime, datetime64], start_offset: int, end_offset: int) -> bool:
+        """是否收盘集合竞价时间
+        """
+
+    def is_call_auction(self, dt: Union[datetime, datetime64]) -> bool:
+        """是否集合竞价时间
+        """
+
+    def is_continuous_auction(self, dt: Union[datetime, datetime64]) -> bool:
+        """是否连续竞价时间
+        """
+
+    def is_submit_order_allowed(self, dt: Union[datetime, datetime64]) -> bool:
+        """是否允许订单提交
+        """
+
+    def is_cancel_order_allowed(self, dt: Union[datetime, datetime64]) -> bool:
+        """是否允许订单撤销
         """
 
 class PyCalendar_DatesArray(PyCalendar):

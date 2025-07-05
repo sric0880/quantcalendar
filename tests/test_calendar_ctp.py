@@ -258,6 +258,76 @@ def test_get_bartimes(to_datetime64):
     assert bartimes[3] == to_seconds(2024, 10, 8, 15)
 
 
+def test_call_auctions(to_datetime64):
+    cal = CalendarCTP("ag")
+    assert cal.get_oca_sessions() == [(-300, -60, 75600), (-300, -60, 32400)]
+    assert cal.get_cca_sessions() == []
+    day_oca = (to_seconds(2025, 4, 29, 8, 55), to_seconds(2025, 4, 29, 8, 59), to_seconds(2025, 4, 29, 9))
+    night_oca = (to_seconds(2025, 4, 29, 20, 55), to_seconds(2025, 4, 29, 20, 59), to_seconds(2025, 4, 29, 21))
+    day2_oca = (to_seconds(2025, 4, 30, 8, 55), to_seconds(2025, 4, 30, 8, 59), to_seconds(2025, 4, 30, 9))
+    day3_oca = (to_seconds(2025, 5, 6, 8, 55), to_seconds(2025, 5, 6, 8, 59), to_seconds(2025, 5, 6, 9))
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 8, 54)) == day_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 8, 55)) == day_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 8, 59)) == day_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 8, 59, 59)) == day_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 9)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 9, 0, 1)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 10, 10)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 11, 30)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 12)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 20, 55)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 20, 59)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 20, 59, 59)) == night_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 21)) == day2_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 30)) == day2_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 30, 2)) == day2_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 30, 3)) == day2_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 30, 9)) == day3_oca
+
+    # TODO 暂时没有收盘集合竞价
+    # cca = (to_seconds(2025, 4, 29, 14, 55), to_seconds(2025, 4, 29, 15), to_seconds(2025, 4, 29, 15, 1))
+
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 29, 8, 55)) == True == cal.is_call_auction(to_datetime64(2025, 4, 29, 8, 55))
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 29, 8, 55), 1) == False
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 29, 8, 59)) == True == cal.is_call_auction(to_datetime64(2025, 4, 29, 8, 59))
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 29, 8, 59, 1)) == False
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 29, 8, 59), 0, -1) == False
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 29, 20, 58)) == True == cal.is_call_auction(to_datetime64(2025, 4, 29, 20, 58))
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 30, 9, 25)) == False
+    assert cal.is_opening_call_auction(to_datetime64(2025, 4, 30, 20, 58)) == False
+
+    # assert cal.is_closing_call_auction()
+
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 2, 30))
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 15))
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 14, 55))
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 9))
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 8, 55)) == False
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 8, 59, 59)) == False
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 10, 15))
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 10, 30))
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 10, 20)) == False
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 12)) == False
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 21)) == False
+    assert cal.is_continuous_auction(to_datetime64(2025, 4, 30, 21, 1)) == False
+
+    assert cal.is_cancel_order_allowed(to_datetime64(2025, 4, 30, 15))
+    assert cal.is_cancel_order_allowed(to_datetime64(2025, 4, 30, 14, 55))
+    assert cal.is_cancel_order_allowed(to_datetime64(2025, 4, 30, 14, 58))
+    assert cal.is_cancel_order_allowed(to_datetime64(2025, 4, 30, 21)) == False
+
+    cal = CalendarCTP("IH")
+    assert cal.get_oca_sessions() == [(-300, -60, 34200)]
+    assert cal.get_cca_sessions() == []
+    day_oca = (to_seconds(2025, 4, 29, 9, 25), to_seconds(2025, 4, 29, 9, 29), to_seconds(2025, 4, 29, 9, 30))
+    day3_oca = (to_seconds(2025, 5, 6, 9, 25), to_seconds(2025, 5, 6, 9, 29), to_seconds(2025, 5, 6, 9, 30))
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 29, 9, 15)) == day_oca
+    assert cal.get_next_oca_session(to_datetime64(2025, 4, 30, 9, 30, 1)) == day3_oca
+
+    cal = CalendarCTP("T")
+    assert cal.get_oca_sessions() == [(-300, -60, 34200)]
+    assert cal.get_cca_sessions() == []
+
 def test_pickle():
     cal = CalendarCTP("AG")
     bs = pickle.dumps({"calendar": cal})
