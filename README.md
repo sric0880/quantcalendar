@@ -103,6 +103,12 @@ print(timestamp_us(d3))
 
 ### C++
 
+Archive:
+
+```sh
+git archive --format=tar.gz --output /nas/public/qiong/third_parties/quantcalendar-{version}.tar.gz no-depends
+```
+
 可以通过传入 -DBUILD_TESTING=OFF禁止测试编译
 
 #### MacOS/Linux
