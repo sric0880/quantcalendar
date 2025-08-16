@@ -472,7 +472,7 @@ void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vect
                                         tz,
                                         offset));
   // TODO: 暂时没有收盘集合竞价（有些品种有收盘集合竞价，这里需要区分）
-  constexpr std::array<std::string, 0> products_has_closing_ca{};
+  std::array<std::string, 0> products_has_closing_ca{};
   // custom sessions
   for (auto &[product_id, market_time] : sessions)
   {
