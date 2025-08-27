@@ -6,6 +6,7 @@
 
 #include "quantcalendar/dates.h"
 #include "quantcalendar/calendar.h"
+#include "quantcalendar/datetime.h"
 
 extern const std::vector<qmc::date_status_item> cn_stock;
 
@@ -35,4 +36,9 @@ int main(int argv, char *args[])
   auto const &ctp_cal = qmc::CalendarCTP::GetInstance("ag2405");
   auto const &ctp_cal1 = qmc::CalendarCTP::GetInstance("IH");
   auto const &cal7x24 = qmc::Time7x24Calendar::GetInstance();
+
+  auto tp = qmc::fromisoformat("2025-08-27 14:55:00");
+  auto bartime = ctp_cal1.GetCurrentBartime(std::chrono::seconds(300), tp);
+  auto bartime1 = ctp_cal1.GetCurrentBartime(std::chrono::seconds(300), tp+system_clock::duration(1));
+  assert(bartime1 - bartime == 300);
 }
