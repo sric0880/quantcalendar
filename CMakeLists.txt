@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.15...3.26)
 # to use dynamic lookup for buiding python modules.
 # Weak link test that need c compiler cannot be skipped.
 # @see https://blog.tim-smith.us/2015/09/python-extension-modules-os-x/
-project(quantcalendar VERSION 2025.6 LANGUAGES C CXX)
+project(quantcalendar VERSION 2025.09 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
