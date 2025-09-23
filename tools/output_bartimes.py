@@ -2,8 +2,9 @@ import json
 import os
 
 import fire
+import quantdata as qd
 
-from quantcalendar import CalendarAstock, CalendarCTP
+from quantcalendar import CalendarAstock, CalendarCTP, timestamp_s
 
 
 def time_fmt(time: int):
@@ -120,15 +121,26 @@ all_calendars = {
         "IF",
         "ec",
         "pg",
-        # "bz", TODO: new product
+        "bz",
         "IH",
-        # "ad", TODO: new product
+        "ad",
     ],
 }
 
 
 def export_all(is_iso_format: bool = True):
     for calendar, symbols in all_calendars.items():
+        with qd.open_mongodb(host="127.0.0.1"):
+            if calendar == "astock":
+                days = qd.mongo_get_data("quantcalendar", "cn_stock")
+                dates_arr = [(timestamp_s(day["_id"]), day["status"]) for day in days]
+                CalendarAstock.Init(dates_arr)
+            elif calendar == "ctp":
+                days = qd.mongo_get_data("quantcalendar", "cn_future")
+                dates_arr = [(timestamp_s(day["_id"]), day["status"]) for day in days]
+                sessions = qd.mongo_get_data("quantcalendar", "cn_future_sessions")
+                sessions = [(s["_id"].encode("ascii"), s["market_time"]) for s in sessions]
+                CalendarCTP.Init(dates_arr, sessions)
         for symbol in symbols:
             export(calendar, symbol, is_iso_format)
 
