@@ -51,8 +51,8 @@ cdef class PyCalendarCTP(PyCalendar_DatesArray):
         return (<const CalendarCTP*>self.c_cal).HasNight()
 
     @staticmethod
-    def Init(dates_arr, sessions):
-        CalendarCTP.Init(dates_arr, move(sessions))
+    def Init(dates_arr, sessions, bartime_right: bool = True):
+        CalendarCTP.Init(dates_arr, move(sessions), bartime_right)
 
     def __str__(self) -> str:
         return super().__str__()

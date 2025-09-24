@@ -16,7 +16,8 @@ NS_QMC_BEGIN
 
 using session_t = std::pair<sec_t, sec_t>;
 // cannot use tuple because it cann't be exported to cython
-struct CallAuctionSession {
+struct CallAuctionSession
+{
   sec_t start_time;
   sec_t end_time;
   sec_t clearing_price_time;
@@ -34,7 +35,7 @@ struct SpecialSessions
 
 inline bool is_daily(const time_point &tp)
 {
-  return (tp - time_point_cast<days>(tp)) == time_point::duration::zero();
+  return tp == time_point_cast<days>(tp);
 }
 
 inline sec_t to_daily(const time_point &tp)
@@ -287,7 +288,7 @@ protected:
   /// @param intervals 支持的K线周期间隔,单位s,只支持分钟和小时 eg. 1min, 5min, 10min 1h 2h...
   /// @param tz 时区
   /// @param offset 有些市场交易时间会跨越凌晨0点, offset表示超过0点的时间差, 越过0点表示下一个交易日
-  /// @param bartime_right K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间 @todo:  `left`暂未实现
+  /// @param bartime_right K线时间是按`right` 结束时间 或者`left` 开始时间表示，默认结束时间
   Calendar(const Data &dates_container,
            const std::vector<session_t> &sessions,
            const std::vector<CallAuctionSession> &opening_ca_sessions,
@@ -303,7 +304,6 @@ private:
   std::string tz_;
   sec_t offset_;
   bool bartime_right_;
-  sec_t offset_minus_day_;
 
   std::vector<session_t> sorted_sessions_;
   // 一天可能有多次开盘集合竞价
@@ -325,8 +325,6 @@ private:
   sec_t ToDaily(const time_point &applied_offset_dt) const;
   const std::vector<session_t> &GetSessionsWithBreaks(sec_t dt) const;
   const std::vector<session_t> &GetSessionsWithoutBreaks(sec_t dt) const;
-  sec_t CombineDatetime(sec_t tradingday, sec_t time) const;
-  sec_t CombineDatetimeSos(sec_t tradingday, sec_t time) const;
   const std::shared_ptr<SpecialSessions> GetSpecialSessions(sec_t dt) const;
   session_t FindNextSession(time_point dt, bool with_breaks) const;
   std::optional<CallAuctionSession> FindNextCASession(time_point dt, bool is_opening) const;
@@ -359,7 +357,7 @@ public:
   bool HasNight() const;
   // TODO 需要确认期货收盘集合竞价是否可以撤单
   bool IsCancelOrderAllowed(time_point dt) const { return IsContinuousAuction(dt) || IsOpeningCallAuction(dt); }
-  static void Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions);
+  static void Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions, bool bartime_right = true);
   static const CalendarCTP &GetInstance(const std::string &symbol = "");
 
 private:

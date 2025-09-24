@@ -201,7 +201,7 @@ cdef extern from "quantcalendar/calendar.h" namespace "qmc" nogil:
 		bint HasNight()
 		bint IsCancelOrderAllowed(tp dt)
 		@staticmethod
-		void Init(const vector[date_status_item] &dates_arr, vector[session_item] sessions) except + # sessions is rvalue
+		void Init(const vector[date_status_item] &dates_arr, vector[session_item] sessions, bint bartime_right) except + # sessions is rvalue
 		@staticmethod
 		CalendarCTP &GetInstance(const string &symbol) except +
 
