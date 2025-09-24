@@ -6,65 +6,6 @@
 NS_QMC_BEGIN
 
 #pragma region Calendar
-auto calc_bartimestamp_left(int session_start, int session_end, std::vector<std::pair<int, int>> &jumps, int inte)
-{
-  int jump_idx = 0;
-  int jumps_len = jumps.size();
-  std::vector<int> ret;
-  while (session_start < session_end)
-  {
-    ret.push_back(session_start);
-    session_start += inte;
-    while (jump_idx < jumps_len)
-    {
-      auto &[jtime, cumj] = jumps[jump_idx];
-      if (session_start > jtime)
-      {
-        session_start += cumj;
-        jump_idx += 1;
-      }
-      else
-      {
-        break;
-      }
-    }
-  }
-  std::transform(ret.begin(), ret.end(), ret.begin(), [](int t)
-                 { return t < iseconds_a_day ? t : t - iseconds_a_day; });
-  return ret;
-}
-
-auto calc_bartimestamp_right(int session_start, int session_end, const std::vector<std::pair<int, int>> &jumps, int inte)
-{
-  int jump_idx = 0;
-  int jumps_len = jumps.size();
-  std::vector<int> ret;
-  while (session_start <= session_end)
-  {
-    session_start += inte;
-    while (jump_idx < jumps_len)
-    {
-      auto &[jtime, cumj] = jumps[jump_idx];
-      if (session_start > jtime)
-      {
-        session_start += cumj;
-        jump_idx += 1;
-      }
-      else
-      {
-        break;
-      }
-    }
-    if (session_start <= session_end)
-      ret.push_back(session_start);
-  }
-  if (ret.empty() || ret[ret.size() - 1] < session_end)
-    ret.push_back(session_end);
-  std::transform(ret.begin(), ret.end(), ret.begin(), [](int t)
-                 { return t < iseconds_a_day ? t : t - iseconds_a_day; });
-  return ret;
-}
-
 template <class Data>
 Calendar<Data>::Calendar(
     const Data &dates_container,
@@ -83,7 +24,6 @@ Calendar<Data>::Calendar(
                           offset_(offset),
                           bartime_right_(bartime_right)
 {
-  offset_minus_day_ = offset_ - iseconds_a_day;
   std::transform(intervals.begin(), intervals.end(), intervals_.begin(), [](const seconds &sec)
                  { return static_cast<int>(sec.count()); });
   open_close_sessions_.emplace_back(sessions_[0].first, sessions_[sessions_.size() - 1].second);
@@ -107,31 +47,45 @@ void Calendar<Data>::CalcBartimes()
 {
   auto start = sessions_[0].first;
   auto end = sessions_[sessions_.size() - 1].second;
-  std::vector<std::pair<int, int>> jumps;
-  int next_sos;
-  int last_eos = -1;
-  for (auto &[sos, eos] : sessions_)
+  std::vector<sec_t> times;
+  for (auto [sos, eos] : sessions_)
   {
-    next_sos = sos;
-    if (sos < start)
-      next_sos += iseconds_a_day;
-    if (last_eos != -1)
-      jumps.emplace_back(last_eos, next_sos - last_eos);
-    last_eos = eos;
-    if (eos < start)
-      last_eos += iseconds_a_day;
+    bool is_open_time = sos == start;
+    bool is_close_time = eos == end;
+    if (bartime_right_)
+    {
+      if (!is_open_time)
+        ++sos;
+      ++eos;
+    }
+    else
+    {
+      if (is_close_time)
+        ++eos;
+    }
+    if (sos >= eos) // 跨天
+    {
+      for (sec_t i = sos; i < iseconds_a_day; ++i)
+        times.push_back(i);
+      for (sec_t i = 0; i < eos; ++i)
+        times.push_back(i);
+    }
+    else
+    {
+      for (sec_t i = sos; i < eos; ++i)
+        times.push_back(i);
+    }
   }
-  if (end < start) // 跨越0点
-    end += iseconds_a_day;
-  if (bartime_right_)
+  auto times_size = times.size();
+  for (auto interval : intervals_)
   {
-    for (auto inte : intervals_)
-      bartimes_.emplace(inte, calc_bartimestamp_right(start, end, jumps, inte));
-  }
-  else
-  {
-    for (auto inte : intervals_)
-      bartimes_.emplace(inte, calc_bartimestamp_left(start, end, jumps, inte));
+    auto &freq_bartimes = bartimes_[interval];
+    for (int i = bartime_right_ ? interval : 0; i < times_size; i += interval)
+    {
+      freq_bartimes.push_back(times[i]);
+    }
+    if (freq_bartimes.size() == 0 || freq_bartimes.back() != times.back())
+      freq_bartimes.push_back(times.back());
   }
 }
 
@@ -145,20 +99,20 @@ void Calendar<Data>::GenerateDailyBartimes(typename Data::iterator &&it, time_po
   {
     sec_t bt = (*it).first;
     ++it;
-    bt = CombineDatetime(bt, close_t);
+    bt += close_t;
     auto bt_time_point = system_clock::from_time_t(bt);
     if (start_dt <= bt_time_point)
     {
       if (count == 0)
       {
         if (bt_time_point < end)
-          ret.push_back(bt + offset_);
+          ret.push_back(bt);
         else
           return;
       }
       else
       {
-        ret.push_back(bt + offset_);
+        ret.push_back(bt);
         if (ret.size() >= count)
           return;
       }
@@ -172,41 +126,59 @@ void Calendar<Data>::GenerateMinuteBartimes(typename Data::iterator &&it, int in
   if (it.is_end())
     throw OutOfCalendar();
   auto &times = bartimes_.at(interval);
+  auto start_time = start_dt.time_since_epoch();
+  auto start_time_in_sec = duration_cast<seconds>(start_time);
+  // 向上取整
+  if (bartime_right_ && start_time > start_time_in_sec)
+    start_time_in_sec += 1s;
   do
   {
     sec_t day = (*it).first;
     ++it;
-    auto &sessions = GetSessionsWithBreaks(day);
+    // merge sessions and bartimes
     std::vector<sec_t> bts;
-    for (auto t : times)
-    {
-      bts.push_back(CombineDatetime(day, t));
-    }
+    auto &sessions = GetSessionsWithBreaks(day);
     for (auto &[sos, eos] : sessions)
     {
-      auto session_end = CombineDatetime(day, eos);
-      if (start_dt > system_clock::from_time_t(session_end))
-        continue;
-      auto session_start = CombineDatetimeSos(day, sos);
-      for (auto &bt : bts)
-      {
-        auto bt_time_point = system_clock::from_time_t(bt);
-        if (bt_time_point >= start_dt && bt <= session_end && bt >= session_start)
+      if (sos > eos)
+      { // 跨天
+        for (auto t : times)
         {
-          if (count == 0)
-          {
-            if (bt_time_point < end)
-              ret.push_back(bt + offset_);
-            else
-              return;
-          }
-          else
-          {
-            ret.push_back(bt + offset_);
-            if (ret.size() >= count)
-              return;
-          }
+          if (t >= sos)
+            bts.push_back(day + t);
+          else if (t <= eos)
+            bts.push_back(day + iseconds_a_day + t);
         }
+      }
+      else
+      {
+        for (auto t : times)
+        {
+          if (t >= sos && t <= eos)
+            bts.push_back(day + t);
+        }
+      }
+    }
+
+    std::vector<qmc::sec_t>::iterator bts_it;
+    if (bartime_right_)
+      bts_it = std::lower_bound(bts.begin(), bts.end(), start_time_in_sec.count());
+    else
+      bts_it = std::upper_bound(bts.begin(), bts.end(), start_time_in_sec.count());
+    for (; bts_it != bts.end(); ++bts_it)
+    {
+      if (count > 0)
+      {
+        ret.push_back(*bts_it);
+        if (ret.size() >= count)
+          return;
+      }
+      else
+      {
+        if (system_clock::from_time_t(*bts_it) < end)
+          ret.push_back(*bts_it);
+        else
+          return;
       }
     }
   } while (!it.is_end());
@@ -216,10 +188,7 @@ template <class Data>
 std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point start, size_t count, time_point end) const
 {
   int inte = interval.count();
-  seconds offset(offset_);
-  start -= offset;
-  end -= offset;
-  sec_t start_day = ToDaily(start);
+  sec_t start_day = ToDaily(start - seconds(offset_));
   std::vector<sec_t> ret;
   if (!bartimes_.contains(inte))
   {
@@ -250,13 +219,12 @@ std::vector<sec_t> Calendar<Data>::GetBartimesImpl(seconds interval, time_point 
 template <class Data>
 session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
 {
-  dt -= seconds(offset_);
-  sec_t start_day = ToDaily(dt);
-  sec_t next_sos_dt = -1;
-  sec_t next_eos_dt = -1;
+  sec_t start_day = ToDaily(dt - seconds(offset_));
   auto it = tradedays->Upper(start_day);
   if (it.is_end())
     throw OutOfCalendar();
+  sec_t next_sos_dt = -1;
+  sec_t next_eos_dt = -1;
   do
   {
     sec_t day = (*it).first;
@@ -265,13 +233,13 @@ session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
     {
       if (next_sos_dt == -1 && sos != -1)
       {
-        auto session_start = CombineDatetimeSos(day, sos);
+        auto session_start = day + sos;
         if (dt < system_clock::from_time_t(session_start))
           next_sos_dt = session_start;
       }
       if (next_eos_dt == -1 && eos != -1)
       {
-        auto session_end = CombineDatetime(day, eos);
+        auto session_end = eos == offset_ ? day + iseconds_a_day + eos : day + eos;
         if (dt <= system_clock::from_time_t(session_end))
           next_eos_dt = session_end;
       }
@@ -281,7 +249,7 @@ session_t Calendar<Data>::FindNextSession(time_point dt, bool with_breaks) const
   } while (!it.is_end());
   if (next_sos_dt == -1 || next_eos_dt == -1)
     throw OutOfCalendar();
-  return {next_sos_dt + offset_, next_eos_dt + offset_};
+  return {next_sos_dt, next_eos_dt};
 }
 
 template <class Data>
@@ -308,7 +276,7 @@ std::optional<CallAuctionSession> Calendar<Data>::FindNextCASession(time_point d
           return std::optional<CallAuctionSession>({tp + _1, tp, tp + _3});
       }
     }
-    dt = time_point(seconds(tp+1));
+    dt = time_point(seconds(tp + 1));
   }
 }
 
@@ -326,7 +294,7 @@ bool Calendar<Data>::IsTradingDay(time_point dt) const
   try
   {
     auto day = to_daily(dt);
-    if (dt == time_point_cast<days>(dt) && offset_ > 0)
+    if (is_daily(dt) && offset_ > 0)
       day -= iseconds_a_day;
     auto &node = tradedays->At(day);
     return node.IsTrading();
@@ -361,29 +329,6 @@ const std::vector<session_t> &Calendar<Data>::GetSessionsWithoutBreaks(sec_t dt)
 {
   auto ss = GetSpecialSessions(dt);
   return (ss != nullptr) ? ss->open_close_sessions : open_close_sessions_;
-}
-
-template <class Data>
-sec_t Calendar<Data>::CombineDatetime(sec_t tradingday, sec_t time) const
-{
-  int offset;
-  if (time > offset_)
-    offset = offset_;
-  else if (time == offset_)
-    offset = bartime_right_ ? offset_minus_day_ : offset_;
-  else
-    offset = offset_minus_day_;
-  return tradingday + time - offset;
-}
-
-template <class Data>
-sec_t Calendar<Data>::CombineDatetimeSos(sec_t tradingday, sec_t time) const
-{
-  // 开盘不可能跨越0点
-  if (time == sessions_[0].first)
-    return tradingday + time - offset_;
-  else
-    return CombineDatetime(tradingday, time);
 }
 
 template class Calendar<DatesArray>;
@@ -457,7 +402,7 @@ std::string convert_symbol(const std::string &symbol)
   }
 }
 
-void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions)
+void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vector<session_item> &&sessions, bool bartime_right)
 {
   dates_container.Init(dates_arr);
   std::vector<seconds> intervals{1min, 3min, 5min, 10min, 15min, 30min, 1h, 2h, 3h, 4h};
@@ -470,7 +415,8 @@ void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vect
                                         {},                                       // 一般品种无收盘集合竞价
                                         intervals,
                                         tz,
-                                        offset));
+                                        offset,
+                                        bartime_right));
   // TODO: 暂时没有收盘集合竞价（有些品种有收盘集合竞价，这里需要区分）
   std::array<std::string, 0> products_has_closing_ca{};
   // custom sessions
@@ -502,7 +448,8 @@ void CalendarCTP::Init(const std::vector<date_status_item> &dates_arr, std::vect
                                                   closing_call_auctions,
                                                   intervals,
                                                   tz,
-                                                  special_offset));
+                                                  special_offset,
+                                                  bartime_right));
   }
   // set special sessions
   // 特殊规则：交易日夜盘不开盘。第二天是节假日，夜盘不交易
