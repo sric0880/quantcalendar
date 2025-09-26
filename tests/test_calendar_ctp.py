@@ -9,6 +9,8 @@ from datetime_helper import to_seconds
 
 from quantcalendar import CalendarCTP, bar_unit, RangeClosed, timestamp_s
 
+test_bartime_right = True
+
 
 def _ctp_close_time(product_id, year, month, day):
     if product_id == "" or product_id in ("T", "TS", "TF", "TL"):
@@ -146,8 +148,25 @@ def to_product_id(symbol: str):
         i += 1
     return symbol[:i]
 
+def test_next_bartime_left(to_datetime64):
+    if test_bartime_right:
+        return
+    cal = CalendarCTP("ag")
+    assert cal.get_bartime_next(60, to_datetime64(2024, 10, 1)) == to_seconds(2024, 9, 30, 14, 59)
+    assert cal.get_bartime_next(60, to_datetime64(2024, 10, 9, 2, 30)) == to_seconds(2024, 10, 9, 2, 29)
+    assert cal.get_bartime_next(bar_unit.hour, to_datetime64(2024, 10, 9, 2, 30)) == to_seconds(2024, 10, 9, 2)
+    assert cal.get_bartime_next(bar_unit.hour, to_datetime64(2024, 10, 9, 2, 30, 1)) == to_seconds(2024, 10, 9, 2)
+    assert cal.get_bartime_next(bar_unit.hour, to_datetime64(2024, 10, 9, 11, 40)) == to_seconds(2024, 10, 9, 10, 45)
+    assert cal.get_bartime_next(bar_unit.hour, to_datetime64(2024, 10, 9, 10, 45)) == to_seconds(2024, 10, 9, 10, 45)
+    assert cal.get_bartime_next(5*bar_unit.min, to_datetime64(2024, 10, 9, 11, 30)) == to_seconds(2024, 10, 9, 11, 25)
+    assert cal.get_bartime_next(5*bar_unit.min, to_datetime64(2024, 10, 9, 13, 29, 59)) == to_seconds(2024, 10, 9, 11, 25)
+    assert cal.get_bartime_next(5*bar_unit.min, to_datetime64(2024, 10, 9, 13, 30)) == to_seconds(2024, 10, 9, 13, 30)
+    assert cal.get_bartime_next(5*bar_unit.min, to_datetime64(2024, 10, 9, 15)) == to_seconds(2024, 10, 9, 14, 55)
+    assert cal.get_bartime_next(4*bar_unit.hour, to_datetime64(2024, 10, 9, 15)) == to_seconds(2024, 10, 9, 13, 45)
 
-def test_next_bartime(to_datetime64):
+def test_next_bartime_right(to_datetime64):
+    if not test_bartime_right:
+        return
     path = "tests/bartime_answers"
 
     for pickle_file in os.listdir(path):
@@ -206,7 +225,36 @@ def hourly_bartimes(year, mon, day):
         to_seconds(year, mon, day, 22),
         to_seconds(year, mon, day, 23) ]
 
-def test_get_bartimes(to_datetime64):
+
+def test_get_bartimes_left(to_datetime64):
+    if test_bartime_right:
+        return
+    cal = CalendarCTP("")
+    bartimes = cal.get_bartimes_gte(bar_unit.mon, to_datetime64(2024, 9, 13), count=2)
+    assert bartimes[0] == to_seconds(2024, 8, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 9, 30, 15, 15)
+
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_datetime64(2024, 10, 1), count=3)
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 11, 15, 15)
+    assert bartimes[2] == to_seconds(2024, 10, 18, 15, 15)
+
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_datetime64(2024, 10, 11), count=2)
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 11, 15, 15)
+
+    bartimes = cal.get_bartimes_gte(bar_unit.week, to_datetime64(2024, 10, 11, 16), count=2)
+    assert bartimes[0] == to_seconds(2024, 10, 11, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 18, 15, 15)
+
+    bartimes = cal.get_bartimes_gte(bar_unit.day, to_datetime64(2024, 10, 8), count=30)
+    assert len(bartimes) == 30
+    assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
+    assert bartimes[1] == to_seconds(2024, 10, 8, 15, 15)
+
+def test_get_bartimes_right(to_datetime64):
+    if not test_bartime_right:
+        return
     cal = CalendarCTP("")
     bartimes = cal.get_bartimes_gte(bar_unit.mon, to_datetime64(2024, 9, 13), count=2)
     assert bartimes[0] == to_seconds(2024, 9, 30, 15, 15)
