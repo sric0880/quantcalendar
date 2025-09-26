@@ -96,38 +96,42 @@ def test_next_bartime(to_datetime64):
         (to_datetime64(2024, 9, 13), to_seconds(2024, 9, 13), 60),
         (to_datetime64(2024, 9, 13), to_seconds(2024, 9, 13), 300),
         (to_datetime64(2024, 9, 13), to_seconds(2024, 9, 13), 900),
-        (to_datetime64(2024, 9, 13, 0, 0, 1), to_seconds(2024, 9, 13, 0, 1), 60),
-        (to_datetime64(2024, 9, 13, 0, 1, 0), to_seconds(2024, 9, 13, 0, 1), 60),
-        (to_datetime64(2024, 9, 13, 0, 0, 1), to_seconds(2024, 9, 13, 0, 5), 300),
-        (to_datetime64(2024, 9, 13, 0, 0, 1), to_seconds(2024, 9, 13, 0, 15), 900),
-        (to_datetime64(2024, 9, 13, 23, 59, 1), to_seconds(2024, 9, 14), 60),
+        (to_datetime64(2024, 9, 13, 0, 0, 1), to_seconds(2024, 9, 13), 60),
+        (to_datetime64(2024, 9, 13, 0, 0, 1), to_seconds(2024, 9, 13), 300),
+        (to_datetime64(2024, 9, 13, 0, 0, 1), to_seconds(2024, 9, 13), 900),
+        (to_datetime64(2024, 9, 13, 0, 1, 1), to_seconds(2024, 9, 13, 0, 1), 60),
+        (to_datetime64(2024, 9, 13, 0, 5, 1), to_seconds(2024, 9, 13, 0, 5), 300),
+        (to_datetime64(2024, 9, 13, 0, 15, 1), to_seconds(2024, 9, 13, 0, 15), 900),
+        (to_datetime64(2024, 9, 13, 0, 1), to_seconds(2024, 9, 13, 0, 1), 60),
+        (to_datetime64(2024, 9, 13, 23, 59, 59), to_seconds(2024, 9, 13, 23, 59), 60),
+        (to_datetime64(2024, 9, 13, 23, 59), to_seconds(2024, 9, 13, 20), 4*bar_unit.hour),
         (to_datetime64(2024, 9, 13, 23), to_seconds(2024, 9, 13, 23), bar_unit.hour),
-        (to_datetime64(2024, 9, 30), to_seconds(2024, 10, 1), bar_unit.mon),
-        (to_datetime64(2024, 9, 30, 1), to_seconds(2024, 10, 1), bar_unit.mon),
+        (to_datetime64(2024, 9, 30), to_seconds(2024, 9, 1), bar_unit.mon),
+        (to_datetime64(2024, 9, 30, 1), to_seconds(2024, 9, 1), bar_unit.mon),
         (to_datetime64(2024, 10, 1), to_seconds(2024, 10, 1), bar_unit.mon),
-        (to_datetime64(2024, 10, 1, 1), to_seconds(2024, 11, 1), bar_unit.mon),
-        (to_datetime64(2024, 9, 15), to_seconds(2024, 9, 16), bar_unit.week),
-        (to_datetime64(2024, 9, 15, 1), to_seconds(2024, 9, 16), bar_unit.week),
+        (to_datetime64(2024, 10, 1, 1), to_seconds(2024, 10, 1), bar_unit.mon),
+        (to_datetime64(2024, 9, 15), to_seconds(2024, 9, 9), bar_unit.week),
+        (to_datetime64(2024, 9, 15, 1), to_seconds(2024, 9, 9), bar_unit.week),
         (to_datetime64(2024, 9, 16), to_seconds(2024, 9, 16), bar_unit.week),
-        (to_datetime64(2024, 9, 16, 1), to_seconds(2024, 9, 23), bar_unit.week),
+        (to_datetime64(2024, 9, 16, 1), to_seconds(2024, 9, 16), bar_unit.week),
         (to_datetime64(2024, 9, 13), to_seconds(2024, 9, 13), bar_unit.day),
-        (to_datetime64(2024, 9, 13, 1), to_seconds(2024, 9, 14), bar_unit.day),
+        (to_datetime64(2024, 9, 13, 1), to_seconds(2024, 9, 13), bar_unit.day),
+        (to_datetime64(2024, 9, 13, 23, 59, 59), to_seconds(2024, 9, 13), bar_unit.day),
+        (np.datetime64("2024-09-13T23:59:59"), to_seconds(2024, 9, 13), bar_unit.day),
     ]
     for query, answer, interval in bartime_testcases:
         assert cal.get_bartime_next(interval, query) == answer
-
-    assert cal.get_bartime_next(60, to_datetime64(2024, 9, 13, 23, 59, 1)) == to_seconds(2024, 9, 14)
-    assert cal.get_bartime_next(60, np.datetime64("2024-09-13T23:59:01")) == to_seconds(2024, 9, 14)
 
 
 def test_get_bartimes(to_datetime64):
     cal = Time7x24Calendar()
     bartimes = cal.get_bartimes_gte(bar_unit.mon, to_datetime64(2024, 9, 13), count=20)
-    assert bartimes[0] == to_seconds(2024, 10, 1)
-    assert bartimes[1] == to_seconds(2024, 11, 1)
+    assert bartimes[0] == to_seconds(2024, 9, 1)
+    assert bartimes[1] == to_seconds(2024, 10, 1)
 
     bartimes = cal.get_bartimes_gte(bar_unit.week, to_datetime64(2024, 9, 13), count=20)
-    assert bartimes[0] == to_seconds(2024, 9, 16)
+    assert bartimes[0] == to_seconds(2024, 9, 9)
+    assert bartimes[1] == to_seconds(2024, 9, 16)
 
     bartimes = cal.get_bartimes_gte(bar_unit.day, to_datetime64(2024, 9, 13), count=20)
     assert len(bartimes) == 20
@@ -135,7 +139,8 @@ def test_get_bartimes(to_datetime64):
     assert bartimes[-1] == to_seconds(2024, 10, 2)
 
     bartimes = cal.get_bartimes_between(30*bar_unit.min, to_datetime64(2024, 9, 13, 1, 0, 1), to_datetime64(2024, 9, 14))
-    assert bartimes[0] == to_seconds(2024, 9, 13, 1, 30)
+    assert bartimes[0] == to_seconds(2024, 9, 13, 1)
+    assert bartimes[1] == to_seconds(2024, 9, 13, 1, 30)
 
     bartimes = cal.get_bartimes_between(4*bar_unit.hour, to_datetime64(2024, 9, 13), to_datetime64(2024, 9, 14))
     assert len(bartimes) == 6
