@@ -1,5 +1,6 @@
 #pragma once
 #include <stdexcept>
+#include <string>
 #include "quantcalendar/qmc_globals.h"
 
 NS_QMC_BEGIN

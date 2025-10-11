@@ -363,7 +363,7 @@ class PyCalendarCTP(PyCalendar_DatesArray):
         """是否又夜盘交易"""
 
     @staticmethod
-    def Init(dates_arr, sessions):
+    def Init(dates_arr, sessions, bartime_right: bool = True):
         """"""
 
 class PyTime7x24Calendar(PyCalendar_Date7x24Array):
