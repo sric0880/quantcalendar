@@ -106,7 +106,7 @@ print(timestamp_us(d3))
 Archive:
 
 ```sh
-git archive --format=tar.gz --output /nas/public/qiong/third_parties/quantcalendar-2025.10.tar.gz no-depends
+git archive --format=tar.gz --output /nas/public/qiong/third_parties/quantcalendar-2026.01.tar.gz no-depends
 ```
 
 可以通过传入 -DBUILD_TESTING=OFF禁止测试编译
