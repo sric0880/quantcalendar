@@ -105,6 +105,8 @@ print(timestamp_us(d3))
 
 Archive:
 
+执行之前要先commit
+
 ```sh
 git archive --format=tar.gz --output /nas/public/qiong/third_parties/quantcalendar-2026.01.tar.gz no-depends
 ```
